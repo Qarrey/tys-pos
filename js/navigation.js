@@ -1,297 +1,126 @@
 //======================================================
 // TYS POS v3
-// SHARED NAVIGATION
+// SHARED NAVIGATION WITH ROLES
 //======================================================
 
-function loadNavigation() {
-
-    const navContainer =
-        document.getElementById("main-navigation");
+async function loadNavigation() {
+    const navContainer = document.getElementById("main-navigation");
 
     if (!navContainer) return;
 
+    if (typeof loadCurrentPOSUser === "function") {
+        await loadCurrentPOSUser();
+    }
 
     const currentPage =
+        window.location.pathname.split("/").pop() || "index.html";
 
-        window.location.pathname
+    const role =
+        currentPOSUser && currentPOSUser.role
+            ? currentPOSUser.role
+            : "cashier";
 
-            .split("/")
-
-            .pop()
-
-        || "index.html";
-
-
-    navContainer.innerHTML = `
-
-        <!-- MAIN -->
-
+    const adminNavigation = `
         <div class="nav-group">
-
-            <span class="nav-group-title">
-                Main
-            </span>
-
-            <a
-                href="index.html"
-                class="nav-link">
-
-                POS
-
-            </a>
-
-            <a
-                href="inventory.html"
-                class="nav-link">
-
-                Inventory
-
-            </a>
-
-            <a
-                href="purchases.html"
-                class="nav-link">
-
-                Purchases
-
-            </a>
-
-            <a
-                href="stock.html"
-                class="nav-link">
-
-                Stock
-
-            </a>
-
+            <span class="nav-group-title">Main</span>
+            <a href="index.html" class="nav-link">POS</a>
+            <a href="inventory.html" class="nav-link">Inventory</a>
+            <a href="purchases.html" class="nav-link">Purchases</a>
+            <a href="stock.html" class="nav-link">Stock</a>
         </div>
 
-
-        <!-- PEOPLE -->
-
         <div class="nav-group">
-
-            <span class="nav-group-title">
-                People
-            </span>
-
-            <a
-                href="suppliers.html"
-                class="nav-link">
-
-                Suppliers
-
-            </a>
-
-            <a
-                href="customers.html"
-                class="nav-link">
-
-                Customers
-
-            </a>
-
-            <a
-                href="users.html"
-                class="nav-link">
-
-                Users
-
-            </a>
-
+            <span class="nav-group-title">People</span>
+            <a href="suppliers.html" class="nav-link">Suppliers</a>
+            <a href="customers.html" class="nav-link">Customers</a>
+            <a href="users.html" class="nav-link">Users</a>
         </div>
 
-
-        <!-- FINANCE -->
-
         <div class="nav-group">
-
-            <span class="nav-group-title">
-                Finance
-            </span>
-
-            <a
-                href="expenses.html"
-                class="nav-link">
-
-                Expenses
-
-            </a>
-
-            <a
-                href="profit.html"
-                class="nav-link">
-
-                Profit
-
-            </a>
-
-            <a
-                href="register.html"
-                class="nav-link">
-
-                Register
-
-            </a>
-
-            <a
-                href="payment-report.html"
-                class="nav-link">
-
-                Payments
-
-            </a>
-
+            <span class="nav-group-title">Finance</span>
+            <a href="expenses.html" class="nav-link">Expenses</a>
+            <a href="profit.html" class="nav-link">Profit</a>
+            <a href="register.html" class="nav-link">Register</a>
+            <a href="payment-report.html" class="nav-link">Payments</a>
         </div>
 
-
-        <!-- REPORTS -->
-
         <div class="nav-group">
-
-            <span class="nav-group-title">
-                Reports
-            </span>
-
-            <a
-                href="reports.html"
-                class="nav-link">
-
-                Reports
-
-            </a>
-
-            <a
-                href="daily-summary.html"
-                class="nav-link">
-
-                Daily
-
-            </a>
-
-            <a
-                href="monthly-summary.html"
-                class="nav-link">
-
-                Monthly
-
-            </a>
-
-            <a
-                href="yearly-summary.html"
-                class="nav-link">
-
-                Yearly
-
-            </a>
-
-            <a
-                href="product-profit.html"
-                class="nav-link">
-
-                Product Profit
-
-            </a>
-
+            <span class="nav-group-title">Reports</span>
+            <a href="reports.html" class="nav-link">Reports</a>
+            <a href="daily-summary.html" class="nav-link">Daily</a>
+            <a href="monthly-summary.html" class="nav-link">Monthly</a>
+            <a href="yearly-summary.html" class="nav-link">Yearly</a>
+            <a href="product-profit.html" class="nav-link">Product Profit</a>
         </div>
 
-
-        <!-- SYSTEM -->
-
         <div class="nav-group">
-
-            <span class="nav-group-title">
-                System
-            </span>
-
-            <a
-                href="categories.html"
-                class="nav-link">
-
-                Categories
-
-            </a>
-
-            <a
-                href="alerts.html"
-                class="nav-link">
-
-                Alerts
-
-            </a>
-
-            <a
-                href="stocktake.html"
-                class="nav-link">
-
-                Stocktake
-
-            </a>
-
-            <a
-                href="backup.html"
-                class="nav-link">
-
-                Backup
-
-            </a>
-
-            <a
-                href="settings.html"
-                class="nav-link">
-
-                Settings
-
-            </a>
-
+            <span class="nav-group-title">System</span>
+            <a href="categories.html" class="nav-link">Categories</a>
+            <a href="alerts.html" class="nav-link">Alerts</a>
+            <a href="stocktake.html" class="nav-link">Stocktake</a>
+            <a href="returns.html" class="nav-link">Returns</a>
+            <a href="backup.html" class="nav-link">Backup</a>
+            <a href="settings.html" class="nav-link">Settings</a>
         </div>
-
     `;
 
+    const cashierNavigation = `
+    <div class="nav-group">
 
-    // Highlight current page
+        <span class="nav-group-title">
+            Cashier
+        </span>
 
-    navContainer
+        <a
+            href="index.html"
+            class="nav-link">
 
-        .querySelectorAll(".nav-link")
+            POS
 
-        .forEach(link => {
+        </a>
 
+        <a
+            href="purchases.html"
+            class="nav-link">
 
-            const linkPage =
+            Purchases
 
-                link
+        </a>
 
-                    .getAttribute("href");
+    </div>
+`;
 
+    navContainer.innerHTML =
+        role === "admin"
+            ? adminNavigation
+            : cashierNavigation;
 
-            if (
-                linkPage ===
-                currentPage
-            ) {
+    navContainer.innerHTML += `
+        <div class="nav-group">
+            <span class="nav-group-title">Account</span>
+            <a href="#" id="logout-btn" class="nav-link">Logout</a>
+        </div>
+    `;
 
-                link.classList.add(
+    navContainer.querySelectorAll(".nav-link").forEach(link => {
+        const linkPage = link.getAttribute("href");
 
-                    "active"
+        if (linkPage === currentPage) {
+            link.classList.add("active");
+        }
+    });
 
-                );
+    const logoutBtn = document.getElementById("logout-btn");
 
-            }
+    if (logoutBtn) {
+        logoutBtn.addEventListener("click", async event => {
+            event.preventDefault();
 
+            await supabaseClient.auth.signOut();
 
+            window.location.href = "login.html";
         });
-
+    }
 }
 
-
-//------------------------------------------------------
-// INITIALIZE
-//------------------------------------------------------
-
-document.addEventListener(
-
-    "DOMContentLoaded",
-
-    loadNavigation
-
-);
+document.addEventListener("DOMContentLoaded", loadNavigation);
