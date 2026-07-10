@@ -385,6 +385,13 @@ function populateCashierDropdown() {
 }
 
 function getSelectedCashier() {
+    if (currentPOSUser) {
+        return {
+            id: currentPOSUser.id,
+            name: currentPOSUser.fullName || currentPOSUser.email || "Cashier"
+        };
+    }
+
     const select = document.getElementById("cashier-select");
 
     if (!select) return null;
@@ -408,18 +415,12 @@ function checkout() {
         return;
     }
 
-    const cashierSelect = document.getElementById("cashier-select");
+    let cashier = getSelectedCashier();
 
-    let cashier = null;
-
-    if (cashierSelect) {
-        cashier = getSelectedCashier();
-
-        if (!cashier) {
-            alert("Please select a cashier.");
-            return;
-        }
-    }
+if (!cashier) {
+    alert("Cashier not found. Please log in again.");
+    return;
+}
 
     const paymentMethod =
         document.getElementById("payment-method")?.value || "Cash";
@@ -481,6 +482,27 @@ function checkout() {
         inventory,
         sales
     });
+    if (typeof saveSaleToSupabase === "function") {
+    saveSaleToSupabase(sale)
+        .then(cloudSale => {
+
+            if (cloudSale) {
+                console.log(
+                    "Sale saved to Supabase:",
+                    cloudSale.id
+                );
+            }
+
+        })
+        .catch(error => {
+
+            console.error(
+                "Cloud sale error:",
+                error
+            );
+
+        });
+}
 
     renderReceipt(sale);
 
