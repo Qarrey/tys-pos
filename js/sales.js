@@ -409,11 +409,14 @@ function getSelectedCashier() {
 // CHECKOUT
 //------------------------------------------------------
 
-function checkout() {
+async function checkout() {
     if (!cart.length) {
         alert("Cart is empty.");
         return;
     }
+    if (typeof loadCurrentPOSUser === "function") {
+    await loadCurrentPOSUser();
+}
 
     let cashier = getSelectedCashier();
 
