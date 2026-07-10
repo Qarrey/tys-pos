@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color"
+          content="#0f172a">
+
+    <title>Purchases | TYS POS</title>
+
+    <link rel="stylesheet"
+          href="styles.css">
+
+    <link rel="manifest"
+          href="manifest.json">
+
+</head>
+
+<body>
+
+<div class="app-shell">
+
+<!-- ======================================================
+HEADER
+====================================================== -->
+
+<header class="topbar">
+
+    <div>
+
+        <p class="eyebrow">
+
+            Purchases
+
+        </p>
+
+        <h1>
+
+            Purchase Management
+
+        </h1>
+
+    </div>
+
+    <div class="status-card">
+
+        <strong>
+
+            TYS General Store
+
+        </strong>
+
+        <nav class="top-nav">
+
+            <a href="index.html" class="nav-link">POS</a>
+
+            <a href="inventory.html" class="nav-link">Inventory</a>
+
+            <a href="purchases.html" class="nav-link">Purchases</a>
+
+            <a href="suppliers.html" class="nav-link">Suppliers</a>
+
+            <a href="profit.html" class="nav-link">Profit</a>
+            <a href="expenses.html" class="nav-link">Expenses</a>
+            <a href="reports.html" class="nav-link">Reports</a>
+
+            <a href="stock.html" class="nav-link">Stock</a>
+
+        </nav>
+
+    </div>
+
+</header>
+
+<!-- ======================================================
+MAIN
+====================================================== -->
+
+<main class="panel">
+
+<div class="section-heading">
+
+<h2>
+
+Purchases Dashboard
+
+</h2>
+
+<p>
+
+Manage stock purchases from suppliers.
+
+</p>
+
+</div>
+
+<!-- ======================================================
+SUMMARY
+====================================================== -->
+
+<div class="stats-grid">
+
+<div class="stat-card">
+
+<span>
+
+Total Purchases
+
+</span>
+
+<strong id="metric-purchases">
+
+0
+
+</strong>
+
+</div>
+
+<div class="stat-card">
+
+<span>
+
+Products
+
+</span>
+
+<strong id="metric-products">
+
+0
+
+</strong>
+
+</div>
+
+<div class="stat-card">
+
+<span>
+
+Inventory Value
+
+</span>
+
+<strong id="metric-inventory-value">
+
+KSh 0.00
+
+</strong>
+
+</div>
+
+<div class="stat-card">
+
+<span>
+
+Low Stock
+
+</span>
+
+<strong id="metric-low-stock">
+
+0
+
+</strong>
+
+</div>
+
+</div>
+
+<!-- ======================================================
+PURCHASE FORM
+====================================================== -->
+
+<div class="inventory-card">
+
+<h3>
+
+Record Purchase
+
+</h3>
+
+<form id="purchase-form">
+<div class="form-grid">
+
+    <div class="field">
+
+        <label>
+
+            Supplier
+
+        </label>
+
+        <select
+            id="purchase-supplier"
+            required>
+
+            <option value="">
+
+                Select Supplier
+
+            </option>
+
+        </select>
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Product
+
+        </label>
+
+        <select
+            id="purchase-product"
+            required>
+
+            <option value="">
+
+                Select Product
+
+            </option>
+
+        </select>
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Quantity
+
+        </label>
+
+        <input
+            id="purchase-qty"
+            type="number"
+            min="1"
+            required>
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Cost Price
+
+        </label>
+
+        <input
+            id="purchase-cost"
+            type="number"
+            min="0"
+            step="0.01"
+            required>
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Invoice Number
+
+        </label>
+
+        <input
+            id="purchase-invoice"
+            type="text"
+            placeholder="Optional">
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Purchase Date
+
+        </label>
+
+        <input
+            id="purchase-date"
+            type="date">
+
+    </div>
+
+</div>
+
+<div class="form-actions">
+
+    <button
+        type="submit"
+        class="primary-btn">
+
+        Save Purchase
+
+    </button>
+
+    <button
+        type="reset"
+        class="secondary-btn">
+
+        Clear
+
+    </button>
+
+</div>
+
+</form>
+
+</div>
+
+<!-- ======================================================
+PURCHASE SUMMARY
+====================================================== -->
+
+<div class="inventory-card">
+
+    <h3>
+
+        Purchase Summary
+
+    </h3>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <span>
+
+                Total Purchases
+
+            </span>
+
+            <strong id="purchase-count">
+
+                0
+
+            </strong>
+
+        </div>
+
+        <div class="stat-card">
+
+            <span>
+
+                Total Cost
+
+            </span>
+
+            <strong id="purchase-total">
+
+                KSh 0.00
+
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+<!-- ======================================================
+SEARCH & PURCHASE HISTORY
+====================================================== -->
+
+<div class="inventory-card">
+
+    <div class="section-heading">
+
+        <h3>
+
+            Purchase History
+
+        </h3>
+
+        <p>
+
+            View and manage all recorded purchases.
+
+        </p>
+
+    </div>
+
+    <div class="toolbar">
+
+        <input
+
+            id="purchase-search"
+
+            type="search"
+
+            placeholder="Search supplier, product or invoice">
+
+        <button
+
+            id="clear-purchase-search"
+
+            type="button"
+
+            class="secondary-btn">
+
+            Clear
+
+        </button>
+
+        <button
+
+            id="export-purchases-btn"
+
+            type="button"
+
+            class="secondary-btn">
+
+            Export CSV
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ======================================================
+PURCHASE TABLE
+====================================================== -->
+
+<div class="inventory-card">
+
+<table class="inventory-table">
+
+<thead>
+
+<tr>
+
+<th>Date</th>
+
+<th>Supplier</th>
+
+<th>Product</th>
+
+<th>Invoice</th>
+
+<th>Qty</th>
+
+<th>Cost</th>
+
+<th>Total</th>
+
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="purchase-history">
+
+<tr>
+
+<td colspan="8">
+
+<div class="empty-state">
+
+No purchases recorded.
+
+</div>
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+<!-- ======================================================
+PURCHASE DETAILS
+====================================================== -->
+
+<div class="inventory-card">
+
+<h3>
+
+Purchase Details
+
+</h3>
+
+<div id="purchase-details">
+
+<div class="empty-state">
+
+Select a purchase to view more details.
+
+</div>
+
+</div>
+
+</div>
+
+</main>
+<!-- ======================================================
+SCRIPTS
+====================================================== -->
+
+<script src="inventory-seed.js"></script>
+
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/suppliers.js"></script>
+<script src="js/purchases.js"></script>
+<script src="js/reports.js"></script>
+
+<script src="app.js"></script>
+</div>
+
+</body>
+
+</html>

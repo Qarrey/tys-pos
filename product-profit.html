@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Profit by Product | TYS POS</title>
+
+    <link
+        rel="stylesheet"
+        href="styles.css">
+
+    <link
+        rel="manifest"
+        href="manifest.json">
+
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- HEADER -->
+
+    <header class="topbar">
+
+        <div>
+
+            <p class="eyebrow">
+                Profit Analysis
+            </p>
+
+            <h1>
+                Profit by Product
+            </h1>
+
+        </div>
+
+
+        <div class="status-card">
+
+            <strong>
+                TYS General Store
+            </strong>
+
+
+            <nav class="top-nav">
+
+                <a href="index.html"
+                   class="nav-link">
+
+                    POS
+
+                </a>
+
+
+                <a href="inventory.html"
+                   class="nav-link">
+
+                    Inventory
+
+                </a>
+
+
+                <a href="profit.html"
+                   class="nav-link">
+
+                    Profit
+
+                </a>
+
+
+                <a href="reports.html"
+                   class="nav-link">
+
+                    Reports
+
+                </a>
+
+
+                <a href="product-profit.html"
+                   class="nav-link">
+
+                    Product Profit
+
+                </a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- MAIN -->
+
+    <main class="panel">
+
+
+        <div class="section-heading">
+
+            <h2>
+                Product Profit Performance
+            </h2>
+
+            <p>
+                See which products generate the most revenue and profit.
+            </p>
+
+        </div>
+
+
+        <!-- SUMMARY -->
+
+        <div class="stats-grid">
+
+
+            <div class="stat-card">
+
+                <span>
+                    Total Revenue
+                </span>
+
+                <strong id="product-profit-revenue">
+
+                    KSh 0.00
+
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Total Product Cost
+                </span>
+
+                <strong id="product-profit-cost">
+
+                    KSh 0.00
+
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Gross Profit
+                </span>
+
+                <strong id="product-profit-total">
+
+                    KSh 0.00
+
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Products Sold
+                </span>
+
+                <strong id="product-profit-count">
+
+                    0
+
+                </strong>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- SEARCH -->
+
+        <div class="inventory-card">
+
+            <div class="toolbar">
+
+                <input
+
+                    id="product-profit-search"
+
+                    type="search"
+
+                    placeholder="Search product">
+
+                <button
+
+                    id="clear-product-profit-search"
+
+                    class="secondary-btn"
+
+                    type="button">
+
+                    Clear
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- TABLE -->
+
+        <div class="inventory-card">
+
+            <h3>
+
+                Profit Breakdown
+
+            </h3>
+
+
+            <table class="inventory-table">
+
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Product
+                        </th>
+
+                        <th>
+                            Quantity Sold
+                        </th>
+
+                        <th>
+                            Revenue
+                        </th>
+
+                        <th>
+                            Product Cost
+                        </th>
+
+                        <th>
+                            Gross Profit
+                        </th>
+
+                        <th>
+                            Profit Margin
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="product-profit-list">
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            <div class="empty-state">
+
+                                No product sales found.
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+
+            </table>
+
+        </div>
+
+
+    </main>
+
+</div>
+
+
+<!-- SCRIPTS -->
+
+<script src="inventory-seed.js"></script>
+
+<script src="js/database.js"></script>
+
+<script src="js/utils.js"></script>
+
+<script src="js/product-profit.js"></script>
+
+
+</body>
+
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Settings | TYS POS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+<div class="app-shell">
+
+<header class="topbar">
+    <div>
+        <p class="eyebrow">Settings</p>
+        <h1>System Settings</h1>
+    </div>
+
+    <div class="status-card">
+        <strong>TYS General Store</strong>
+
+        <nav class="top-nav">
+            <a href="index.html" class="nav-link">POS</a>
+            <a href="inventory.html" class="nav-link">Inventory</a>
+            <a href="purchases.html" class="nav-link">Purchases</a>
+            <a href="suppliers.html" class="nav-link">Suppliers</a>
+            <a href="profit.html" class="nav-link">Profit</a>
+            <a href="expenses.html" class="nav-link">Expenses</a>
+            <a href="reports.html" class="nav-link">Reports</a>
+            <a href="stock.html" class="nav-link">Stock</a>
+        </nav>
+    </div>
+</header>
+
+<main class="panel">
+
+    <div class="section-heading">
+        <h2>Store Settings</h2>
+        <p>Customize your store details, receipt and system preferences.</p>
+    </div>
+
+    <div class="inventory-card">
+
+        <form id="settings-form">
+
+            <div class="form-grid">
+
+                <div class="field">
+                    <label>Store Name</label>
+                    <input id="setting-store-name" type="text">
+                </div>
+
+                <div class="field">
+                    <label>Phone Number</label>
+                    <input id="setting-phone" type="text">
+                </div>
+
+                <div class="field full">
+                    <label>Store Address</label>
+                    <textarea id="setting-address" rows="3"></textarea>
+                </div>
+
+                <div class="field">
+                    <label>Currency</label>
+                    <input id="setting-currency" type="text" placeholder="KSh">
+                </div>
+
+                <div class="field">
+                    <label>Default Low Stock Level</label>
+                    <input id="setting-low-stock" type="number" min="1">
+                </div>
+
+                <div class="field full">
+                    <label>Receipt Footer</label>
+                    <textarea id="setting-receipt-footer" rows="3"></textarea>
+                </div>
+
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="primary-btn">
+                    Save Settings
+                </button>
+
+                <button type="button" id="reset-settings-btn" class="secondary-btn">
+                    Reset Default
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</main>
+
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/settings.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>

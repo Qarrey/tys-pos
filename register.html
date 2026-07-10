@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Cash Register | TYS POS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+<div class="app-shell">
+
+<header class="topbar">
+ <nav
+    id="main-navigation"
+    class="top-nav">
+</nav>
+
+</header>
+
+<main class="panel">
+
+    <div class="section-heading">
+        <h2>Shift Management</h2>
+        <p>Track opening cash, expected cash, actual cash and shortages.</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Opening Cash</span>
+            <strong id="register-opening">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Cash Sales</span>
+            <strong id="register-sales">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Expected Cash</span>
+            <strong id="register-expected">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Difference</span>
+            <strong id="register-difference">KSh 0.00</strong>
+        </div>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Open Register</h3>
+
+        <form id="open-register-form">
+            <div class="form-grid">
+                <div class="field">
+                    <label>Opening Cash</label>
+                    <input id="opening-cash" type="number" min="0" step="0.01" required>
+                </div>
+
+                <div class="field">
+                    <label>Cashier Name</label>
+                    <input id="register-cashier" type="text" placeholder="Optional">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="primary-btn" type="submit">Open Register</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Close Register</h3>
+
+        <form id="close-register-form">
+            <div class="form-grid">
+                <div class="field">
+                    <label>Actual Cash Counted</label>
+                    <input id="actual-cash" type="number" min="0" step="0.01" required>
+                </div>
+
+                <div class="field">
+                    <label>Notes</label>
+                    <input id="register-notes" type="text">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button class="primary-btn" type="submit">Close Register</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Register History</h3>
+
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Cashier</th>
+                    <th>Opening</th>
+                    <th>Cash Sales</th>
+                    <th>Expected</th>
+                    <th>Actual</th>
+                    <th>Difference</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+
+            <tbody id="register-history">
+                <tr>
+                    <td colspan="8">
+                        <div class="empty-state">No register history.</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/register.js"></script>
+<script src="js/navigation.js"></script>
+
+</body>
+</html>

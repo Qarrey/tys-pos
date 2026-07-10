@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Payment Report | TYS POS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body>
+
+<div class="app-shell">
+
+<header class="topbar">
+    <div>
+        <p class="eyebrow">Payments</p>
+        <h1>Payment Method Report</h1>
+    </div>
+
+    <div class="status-card">
+        <strong>TYS General Store</strong>
+
+        <nav class="top-nav">
+            <a href="index.html" class="nav-link">POS</a>
+            <a href="reports.html" class="nav-link">Reports</a>
+            <a href="profit.html" class="nav-link">Profit</a>
+            <a href="daily-summary.html" class="nav-link">Daily Summary</a>
+            <a href="settings.html" class="nav-link">Settings</a>
+        </nav>
+    </div>
+</header>
+
+<main class="panel">
+
+    <div class="section-heading">
+        <h2>Payments Summary</h2>
+        <p>See how much was received by each payment method.</p>
+    </div>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <span>Cash</span>
+            <strong id="payment-cash">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>M-Pesa</span>
+            <strong id="payment-mpesa">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Card</span>
+            <strong id="payment-card">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Bank Transfer</span>
+            <strong id="payment-bank">KSh 0.00</strong>
+        </div>
+
+    </div>
+
+    <div class="inventory-card">
+        <h3>Payment Breakdown</h3>
+
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Payment Method</th>
+                    <th>Sales Count</th>
+                    <th>Total Amount</th>
+                </tr>
+            </thead>
+
+            <tbody id="payment-report-list">
+                <tr>
+                    <td colspan="3">
+                        <div class="empty-state">No payment records.</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/payment-report.js"></script>
+
+</body>
+</html>

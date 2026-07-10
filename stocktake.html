@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>Stocktaking | TYS POS</title>
+
+    <link rel="stylesheet" href="styles.css">
+
+    <link rel="manifest" href="manifest.json">
+
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- HEADER -->
+
+    <header class="topbar">
+
+        <div>
+
+            <p class="eyebrow">
+                Inventory Control
+            </p>
+
+            <h1>
+                Physical Stock Count
+            </h1>
+
+        </div>
+
+        <div class="status-card">
+
+            <strong>
+                TYS General Store
+            </strong>
+
+            <nav class="top-nav">
+
+                <a href="index.html" class="nav-link">
+                    POS
+                </a>
+
+                <a href="inventory.html" class="nav-link">
+                    Inventory
+                </a>
+
+                <a href="purchases.html" class="nav-link">
+                    Purchases
+                </a>
+
+                <a href="stock.html" class="nav-link">
+                    Stock
+                </a>
+
+                <a href="reports.html" class="nav-link">
+                    Reports
+                </a>
+
+                <a href="stocktake.html" class="nav-link">
+                    Stocktake
+                </a>
+
+            </nav>
+
+        </div>
+
+    </header>
+
+
+    <!-- MAIN -->
+
+    <main class="panel">
+
+        <div class="section-heading">
+
+            <h2>
+                Stocktaking
+            </h2>
+
+            <p>
+                Enter the quantity physically available in the shop.
+            </p>
+
+        </div>
+
+
+        <!-- SUMMARY -->
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+
+                <span>
+                    Products Counted
+                </span>
+
+                <strong id="stocktake-count">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Shortages
+                </span>
+
+                <strong id="stocktake-shortages">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Extra Stock
+                </span>
+
+                <strong id="stocktake-extra">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <!-- SEARCH -->
+
+        <div class="inventory-card">
+
+            <div class="toolbar">
+
+                <input
+                    id="stocktake-search"
+                    type="search"
+                    placeholder="Search product, SKU or category">
+
+                <button
+                    id="clear-stocktake-search"
+                    class="secondary-btn"
+                    type="button">
+
+                    Clear
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- STOCKTAKE TABLE -->
+
+        <div class="inventory-card">
+
+            <h3>
+                Physical Inventory Count
+            </h3>
+
+            <table class="inventory-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Product
+                        </th>
+
+                        <th>
+                            SKU
+                        </th>
+
+                        <th>
+                            System Stock
+                        </th>
+
+                        <th>
+                            Physical Stock
+                        </th>
+
+                        <th>
+                            Difference
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody id="stocktake-list">
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            <div class="empty-state">
+
+                                No products found.
+
+                            </div>
+
+                        </td>
+
+                    </tr>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- SAVE -->
+
+        <div class="inventory-card">
+
+            <button
+                id="save-stocktake-btn"
+                class="primary-btn"
+                type="button">
+
+                Save Stocktake
+
+            </button>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- SCRIPTS -->
+
+<script src="inventory-seed.js"></script>
+
+<script src="js/database.js"></script>
+
+<script src="js/utils.js"></script>
+
+<script src="js/stock.js"></script>
+
+<script src="js/stocktake.js"></script>
+
+
+</body>
+
+</html>
