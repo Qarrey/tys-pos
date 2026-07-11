@@ -796,6 +796,7 @@ function initializeSalesModule() {
     initializeProductSearch();
     initializeBarcodeScanner();
     populateCashierDropdown();
+    initializeMobileCartToggle();
 
     const checkoutButton = document.getElementById("checkout-btn");
 
@@ -825,6 +826,20 @@ function initializeSalesModule() {
         discountInput.addEventListener("input", updateCartTotals);
     }
 }
+function initializeMobileCartToggle() {
+    const toggle = document.getElementById("mobile-cart-toggle");
+    const cartPanel = document.querySelector(".cart-panel");
+
+    if (!toggle || !cartPanel) return;
+
+    toggle.addEventListener("click", () => {
+        const isOpen = cartPanel.classList.toggle("mobile-open");
+
+        toggle.textContent = isOpen
+            ? "Close Cart"
+            : "View Cart";
+    });
+}
 
 //------------------------------------------------------
 // REFRESH
@@ -839,4 +854,19 @@ function refreshSales() {
     if (typeof updateDashboardMetrics === "function") {
         updateDashboardMetrics();
     }
+}
+function getSelectedSaleDate() {
+    const input = document.getElementById("sale-date");
+
+    if (!input || !input.value) {
+        return new Date().toISOString();
+    }
+
+    const selectedDate = new Date(input.value);
+
+    if (isNaN(selectedDate.getTime())) {
+        return new Date().toISOString();
+    }
+
+    return selectedDate.toISOString();
 }
