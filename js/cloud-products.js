@@ -3,21 +3,28 @@
 // CLOUD PRODUCTS MODULE
 //======================================================
 
+let cloudProductsChannel = null;
+
+//------------------------------------------------------
+// LOAD PRODUCTS FROM SUPABASE
+//------------------------------------------------------
+
 async function loadCloudProducts() {
     const { data, error } = await supabaseClient
         .from("products")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("name", { ascending: true });
 
     if (error) {
         console.error("Could not load cloud products:", error);
         return [];
     }
 
-    return data.map(product => ({
+    return (data || []).map(product => ({
         id: product.id,
-        name: product.name,
+        name: product.name || "",
         sku: product.sku || "",
+        barcode: product.barcode || "",
         category: product.category || "",
         cost: Number(product.cost || 0),
         sellingPrice: Number(product.selling_price || 0),
@@ -26,34 +33,67 @@ async function loadCloudProducts() {
     }));
 }
 
+//------------------------------------------------------
+// SYNC CLOUD PRODUCTS INTO POS
+//------------------------------------------------------
+
 async function syncCloudProductsToPOS() {
-    if (typeof supabaseClient === "undefined") return;
+    try {
+        const cloudProducts = await loadCloudProducts();
 
-    const cloudProducts = await loadCloudProducts();
+        console.log(
+            `Loaded ${cloudProducts.length} products from Supabase.`
+        );
 
-    inventory = cloudProducts;
+        window.inventory = cloudProducts;
 
-    saveState({
-        inventory,
-        sales
-    });
+        const currentState =
+            typeof loadState === "function"
+                ? loadState()
+                : {};
 
-    if (typeof renderProducts === "function") {
-        renderProducts();
-    }
+        if (typeof saveState === "function") {
+            saveState({
+                ...currentState,
+                inventory: cloudProducts
+            });
+        }
 
-    if (typeof renderInventory === "function") {
-        renderInventory();
-    }
+        if (typeof renderProducts === "function") {
+            renderProducts();
+        }
 
-    if (typeof populateProductDropdown === "function") {
-        populateProductDropdown();
+        if (typeof renderInventory === "function") {
+            renderInventory();
+        }
+
+        if (typeof populateProductDropdown === "function") {
+            populateProductDropdown();
+        }
+
+        if (typeof updateDashboardMetrics === "function") {
+            updateDashboardMetrics();
+        }
+
+        return cloudProducts;
+
+    } catch (error) {
+        console.error("Cloud product sync failed:", error);
+        return [];
     }
 }
 
+//------------------------------------------------------
+// REALTIME PRODUCT UPDATES
+//------------------------------------------------------
+
 function subscribeToCloudProducts() {
-    supabaseClient
-        .channel("products-changes")
+    if (cloudProductsChannel) {
+        supabaseClient.removeChannel(cloudProductsChannel);
+    }
+
+    cloudProductsChannel = supabaseClient
+        .channel("tys-products-realtime")
         .on(
             "postgres_changes",
             {
@@ -61,14 +101,37 @@ function subscribeToCloudProducts() {
                 schema: "public",
                 table: "products"
             },
-            async () => {
+            async payload => {
+                console.log("Product change received:", payload.eventType);
+
                 await syncCloudProductsToPOS();
             }
         )
-        .subscribe();
+        .subscribe(status => {
+            console.log("Products realtime:", status);
+        });
 }
 
-document.addEventListener("DOMContentLoaded", async () => {
+//------------------------------------------------------
+// INITIALIZE
+//------------------------------------------------------
+
+async function initializeCloudProducts() {
+    const { data } = await supabaseClient.auth.getSession();
+
+    if (!data.session) {
+        console.warn("No logged-in session. Cloud products not loaded.");
+        return;
+    }
+
     await syncCloudProductsToPOS();
+
     subscribeToCloudProducts();
-});
+}
+
+document.addEventListener(
+    "DOMContentLoaded",
+    initializeCloudProducts
+);
+
+console.log("cloud-products.js loaded");
