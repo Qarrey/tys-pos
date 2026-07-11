@@ -1,12 +1,8 @@
 //======================================================
 // TYS POS v3
 // PURCHASES MODULE
-// PART 1
 //======================================================
 
-//------------------------------------------------------
-// GLOBAL
-//------------------------------------------------------
 
 //------------------------------------------------------
 // SUPPLIER DROPDOWN
@@ -14,31 +10,38 @@
 
 function populateSupplierDropdown() {
 
-    const select = document.getElementById("purchase-supplier");
+    const select =
+        document.getElementById("purchase-supplier");
 
     if (!select) return;
 
-    const supplierList = getSuppliers();
+    const supplierList =
+        typeof getSuppliers === "function"
+            ? getSuppliers()
+            : [];
 
     select.innerHTML = `
         <option value="">
-            Select Supplier
+            No Supplier / Optional
         </option>
     `;
 
     supplierList.forEach(supplier => {
 
-        const option = document.createElement("option");
+        const option =
+            document.createElement("option");
 
         option.value = supplier.id;
 
-        option.textContent = supplier.name;
+        option.textContent =
+            supplier.name || "Unnamed Supplier";
 
         select.appendChild(option);
 
     });
 
 }
+
 
 //------------------------------------------------------
 // PRODUCT DROPDOWN
@@ -46,13 +49,18 @@ function populateSupplierDropdown() {
 
 function populateProductDropdown() {
 
-    const select = document.getElementById("purchase-product");
+    const select =
+        document.getElementById("purchase-product");
 
     if (!select) return;
 
-    const state = loadState();
+    const state =
+        typeof loadState === "function"
+            ? loadState()
+            : {};
 
-    const productList = state.inventory || [];
+    const productList =
+        state.inventory || [];
 
     select.innerHTML = `
         <option value="">
@@ -60,325 +68,1152 @@ function populateProductDropdown() {
         </option>
     `;
 
-    productList.forEach(product => {
+    productList
+        .slice()
+        .sort((a, b) => {
 
-        const option = document.createElement("option");
+            return String(a.name || "")
+                .localeCompare(
+                    String(b.name || "")
+                );
 
-        option.value = product.id;
+        })
+        .forEach(product => {
 
-        option.textContent = product.name;
+            const option =
+                document.createElement("option");
 
-        select.appendChild(option);
+            option.value = product.id;
 
-    });
+            option.textContent =
+                product.name || "Unnamed Product";
+
+            select.appendChild(option);
+
+        });
 
 }
+
+
 //------------------------------------------------------
 // SAVE PURCHASE
 //------------------------------------------------------
 
 function savePurchase() {
 
-    const supplierId = document.getElementById("purchase-supplier").value;
-    const productId = document.getElementById("purchase-product").value;
-    const quantity = Number(document.getElementById("purchase-qty").value);
-    const cost = Number(document.getElementById("purchase-cost").value);
-    const invoice = document.getElementById("purchase-invoice").value.trim();
+    const supplierSelect =
+        document.getElementById(
+            "purchase-supplier"
+        );
 
-    const dateInput = document.getElementById("purchase-date");
-    const date = dateInput && dateInput.value
-        ? new Date(dateInput.value).toISOString()
-        : new Date().toISOString();
+    const productSelect =
+        document.getElementById(
+            "purchase-product"
+        );
 
-    if (!supplierId || !productId || quantity <= 0 || cost <= 0) {
-        alert("Please complete all required fields.");
+    const quantityInput =
+        document.getElementById(
+            "purchase-qty"
+        );
+
+    const costInput =
+        document.getElementById(
+            "purchase-cost"
+        );
+
+    const invoiceInput =
+        document.getElementById(
+            "purchase-invoice"
+        );
+
+    const dateInput =
+        document.getElementById(
+            "purchase-date"
+        );
+
+
+    const supplierId =
+        supplierSelect
+            ? supplierSelect.value
+            : "";
+
+    const productId =
+        productSelect
+            ? productSelect.value
+            : "";
+
+    const quantity =
+        quantityInput
+            ? Number(quantityInput.value)
+            : 0;
+
+    const cost =
+        costInput
+            ? Number(costInput.value)
+            : 0;
+
+    const invoice =
+        invoiceInput
+            ? invoiceInput.value.trim()
+            : "";
+
+
+    const date =
+        dateInput && dateInput.value
+
+            ? new Date(
+                `${dateInput.value}T12:00:00`
+            ).toISOString()
+
+            : new Date().toISOString();
+
+
+    //--------------------------------------------------
+    // VALIDATION
+    //--------------------------------------------------
+
+    if (!productId) {
+
+        alert(
+            "Please select a product."
+        );
+
         return;
+
     }
 
-    const suppliers = getSuppliers();
-    const supplier = suppliers.find(s => s.id === supplierId);
 
-    const state = loadState();
-    const product = state.inventory.find(p => p.id === productId);
+    if (
+        !Number.isFinite(quantity) ||
+        quantity <= 0
+    ) {
+
+        alert(
+            "Please enter a valid quantity."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !Number.isFinite(cost) ||
+        cost < 0
+    ) {
+
+        alert(
+            "Please enter a valid cost price."
+        );
+
+        return;
+
+    }
+
+
+    //--------------------------------------------------
+    // FIND SUPPLIER
+    //--------------------------------------------------
+
+    const supplierList =
+        typeof getSuppliers === "function"
+            ? getSuppliers()
+            : [];
+
+
+    const supplier =
+        supplierId
+
+            ? supplierList.find(
+                item =>
+                    String(item.id) ===
+                    String(supplierId)
+            )
+
+            : null;
+
+
+    //--------------------------------------------------
+    // FIND PRODUCT
+    //--------------------------------------------------
+
+    const state =
+        typeof loadState === "function"
+            ? loadState()
+            : {};
+
+
+    const inventory =
+        state.inventory || [];
+
+
+    const product =
+        inventory.find(
+            item =>
+                String(item.id) ===
+                String(productId)
+        );
+
 
     if (!product) {
-        alert("Product not found.");
+
+        alert(
+            "Product not found. Refresh the page and try again."
+        );
+
         return;
+
     }
 
-    product.stock = Number(product.stock || 0) + quantity;
+
+    //--------------------------------------------------
+    // UPDATE STOCK AND COST
+    //--------------------------------------------------
+
+    product.stock =
+        Number(product.stock || 0) +
+        quantity;
+
+
     product.cost = cost;
 
+
+    //--------------------------------------------------
+    // CREATE PURCHASE
+    //--------------------------------------------------
+
     const purchase = {
-        id: generateId("PUR-"),
-        supplierId,
-        supplierName: supplier ? supplier.name : "",
-        productId,
-        productName: product.name,
+
+        id:
+            typeof generateId === "function"
+
+                ? generateId("PUR-")
+
+                : `PUR-${Date.now()}`,
+
+        supplierId:
+            supplier
+                ? supplier.id
+                : "",
+
+        supplierName:
+            supplier
+                ? supplier.name
+                : "Not specified",
+
+        productId:
+            product.id,
+
+        productName:
+            product.name || "Unknown Product",
+
         quantity,
+
         cost,
-        total: quantity * cost,
+
+        total:
+            quantity * cost,
+
         invoice,
+
         date
+
     };
 
-    purchases = getPurchases();
-    purchases.unshift(purchase);
 
-    savePurchases(purchases);
+    //--------------------------------------------------
+    // SAVE PURCHASE
+    //--------------------------------------------------
 
-    saveState({
-        inventory: state.inventory,
-        sales: state.sales || []
-    });
+    purchases =
+        typeof getPurchases === "function"
 
-    recordStockMovement({
-        productId: product.id,
-        productName: product.name,
-        type: "Purchase",
-        quantity,
-        notes: invoice || "Purchase recorded"
-    });
+            ? getPurchases()
+
+            : [];
+
+
+    purchases.unshift(
+        purchase
+    );
+
+
+    if (
+        typeof savePurchases ===
+        "function"
+    ) {
+
+        savePurchases(
+            purchases
+        );
+
+    }
+
+
+    //--------------------------------------------------
+    // SAVE UPDATED INVENTORY
+    //--------------------------------------------------
+
+    if (
+        typeof saveState ===
+        "function"
+    ) {
+
+        saveState({
+
+            ...state,
+
+            inventory,
+
+            sales:
+                state.sales || []
+
+        });
+
+    }
+
+
+    //--------------------------------------------------
+    // STOCK MOVEMENT
+    //--------------------------------------------------
+
+    if (
+        typeof recordStockMovement ===
+        "function"
+    ) {
+
+        recordStockMovement({
+
+            productId:
+                product.id,
+
+            productName:
+                product.name,
+
+            type:
+                "Purchase",
+
+            quantity,
+
+            notes:
+                invoice ||
+                "Purchase recorded"
+
+        });
+
+    }
+
+
+    //--------------------------------------------------
+    // REFRESH PAGE
+    //--------------------------------------------------
 
     renderPurchaseHistory();
+
+    updatePurchaseSummary();
+
     populateProductDropdown();
 
-    if (typeof renderInventory === "function") {
+
+    if (
+        typeof renderInventory ===
+        "function"
+    ) {
+
         renderInventory();
+
     }
 
-    if (typeof updateDashboardMetrics === "function") {
+
+    if (
+        typeof updateDashboardMetrics ===
+        "function"
+    ) {
+
         updateDashboardMetrics();
+
     }
 
-    document.getElementById("purchase-form").reset();
+
+    //--------------------------------------------------
+    // RESET FORM
+    //--------------------------------------------------
+
+    const form =
+        document.getElementById(
+            "purchase-form"
+        );
+
+
+    if (form) {
+
+        form.reset();
+
+    }
+
+
+    populateSupplierDropdown();
+
+    populateProductDropdown();
+
+
+    alert(
+        "Purchase saved successfully."
+    );
 
 }
+
+
 //------------------------------------------------------
 // RENDER PURCHASE HISTORY
 //------------------------------------------------------
 
-function renderPurchaseHistory(search = "") {
+function renderPurchaseHistory(
+    search = ""
+) {
 
-    const container = document.getElementById("purchase-history");
+    const container =
+        document.getElementById(
+            "purchase-history"
+        );
+
 
     if (!container) return;
 
-    purchases = getPurchases();
 
-    const keyword = search.trim().toLowerCase();
+    purchases =
+        typeof getPurchases === "function"
 
-    const filtered = purchases.filter(purchase => {
+            ? getPurchases()
 
-        return (
-            purchase.supplierName.toLowerCase().includes(keyword) ||
-            purchase.productName.toLowerCase().includes(keyword) ||
-            (purchase.invoice || "").toLowerCase().includes(keyword)
+            : [];
+
+
+    const keyword =
+        String(search || "")
+            .trim()
+            .toLowerCase();
+
+
+    const filtered =
+        purchases.filter(
+            purchase => {
+
+                const supplierName =
+                    String(
+                        purchase.supplierName ||
+                        ""
+                    ).toLowerCase();
+
+
+                const productName =
+                    String(
+                        purchase.productName ||
+                        ""
+                    ).toLowerCase();
+
+
+                const invoice =
+                    String(
+                        purchase.invoice ||
+                        ""
+                    ).toLowerCase();
+
+
+                return (
+
+                    supplierName
+                        .includes(keyword)
+
+                    ||
+
+                    productName
+                        .includes(keyword)
+
+                    ||
+
+                    invoice
+                        .includes(keyword)
+
+                );
+
+            }
         );
 
-    });
 
     if (!filtered.length) {
 
         container.innerHTML = `
+
             <tr>
+
                 <td colspan="8">
+
                     <div class="empty-state">
+
                         No purchases recorded.
+
                     </div>
+
                 </td>
+
             </tr>
+
         `;
 
         return;
 
     }
 
-    container.innerHTML = filtered.map(purchase => `
 
-        <tr>
+    container.innerHTML =
+        filtered.map(
+            purchase => `
 
-            <td>${formatDate(purchase.date)}</td>
+            <tr>
 
-            <td>${purchase.supplierName || "-"}</td>
+                <td>
 
-            <td>${purchase.productName || "-"}</td>
+                    ${
+                        typeof formatDate ===
+                        "function"
 
-            <td>${purchase.invoice || "-"}</td>
+                            ? formatDate(
+                                purchase.date
+                            )
 
-            <td>${purchase.quantity}</td>
+                            : purchase.date
+                    }
 
-            <td>${formatCurrency(purchase.cost)}</td>
+                </td>
 
-            <td>${formatCurrency(purchase.total)}</td>
 
-            <td>
-                <button
-                    class="secondary-btn edit-purchase"
-                    data-id="${purchase.id}">
-                    Edit
-                </button>
+                <td>
 
-                <button
-                    class="danger-btn delete-purchase"
-                    data-id="${purchase.id}">
-                    Delete
-                </button>
-            </td>
+                    ${
+                        purchase.supplierName ||
+                        "Not specified"
+                    }
 
-        </tr>
+                </td>
 
-    `).join("");
 
-    document.querySelectorAll(".edit-purchase").forEach(button => {
+                <td>
 
-        button.addEventListener("click", () => {
+                    ${
+                        purchase.productName ||
+                        "-"
+                    }
 
-            editPurchase(button.dataset.id);
+                </td>
 
-        });
 
-    });
+                <td>
 
-    document.querySelectorAll(".delete-purchase").forEach(button => {
+                    ${
+                        purchase.invoice ||
+                        "-"
+                    }
 
-        button.addEventListener("click", () => {
+                </td>
 
-            deletePurchase(button.dataset.id);
 
-        });
+                <td>
 
-    });
+                    ${
+                        Number(
+                            purchase.quantity ||
+                            0
+                        )
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        typeof formatCurrency ===
+                        "function"
+
+                            ? formatCurrency(
+                                purchase.cost
+                            )
+
+                            : purchase.cost
+                    }
+
+                </td>
+
+
+                <td>
+
+                    ${
+                        typeof formatCurrency ===
+                        "function"
+
+                            ? formatCurrency(
+                                purchase.total
+                            )
+
+                            : purchase.total
+                    }
+
+                </td>
+
+
+                <td>
+
+                    <button
+
+                        class="
+                            secondary-btn
+                            edit-purchase
+                        "
+
+                        type="button"
+
+                        data-id="
+                            ${purchase.id}
+                        ">
+
+                        Edit
+
+                    </button>
+
+
+                    <button
+
+                        class="
+                            danger-btn
+                            delete-purchase
+                        "
+
+                        type="button"
+
+                        data-id="
+                            ${purchase.id}
+                        ">
+
+                        Delete
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+        `).join("");
+
+
+    document
+        .querySelectorAll(
+            ".edit-purchase"
+        )
+        .forEach(
+            button => {
+
+                button
+                    .addEventListener(
+                        "click",
+                        () => {
+
+                            editPurchase(
+                                button.dataset.id
+                            );
+
+                        }
+                    );
+
+            }
+        );
+
+
+    document
+        .querySelectorAll(
+            ".delete-purchase"
+        )
+        .forEach(
+            button => {
+
+                button
+                    .addEventListener(
+                        "click",
+                        () => {
+
+                            deletePurchase(
+                                button.dataset.id
+                            );
+
+                        }
+                    );
+
+            }
+        );
 
 }
+
+
 //------------------------------------------------------
 // EDIT PURCHASE
 //------------------------------------------------------
 
-function editPurchase(purchaseId) {
+function editPurchase(
+    purchaseId
+) {
 
-    purchases = getPurchases();
+    purchases =
+        typeof getPurchases === "function"
 
-    const purchase = purchases.find(p => p.id === purchaseId);
+            ? getPurchases()
+
+            : [];
+
+
+    const purchase =
+        purchases.find(
+
+            item =>
+
+                String(item.id) ===
+                String(purchaseId)
+
+        );
+
 
     if (!purchase) return;
 
-    document.getElementById("purchase-supplier").value = purchase.supplierId;
-    document.getElementById("purchase-product").value = purchase.productId;
-    document.getElementById("purchase-qty").value = purchase.quantity;
-    document.getElementById("purchase-cost").value = purchase.cost;
-    document.getElementById("purchase-invoice").value = purchase.invoice || "";
 
-    const dateInput = document.getElementById("purchase-date");
+    const supplierSelect =
+        document.getElementById(
+            "purchase-supplier"
+        );
 
-    if (dateInput && purchase.date) {
-        dateInput.value = purchase.date.split("T")[0];
+
+    const productSelect =
+        document.getElementById(
+            "purchase-product"
+        );
+
+
+    const quantityInput =
+        document.getElementById(
+            "purchase-qty"
+        );
+
+
+    const costInput =
+        document.getElementById(
+            "purchase-cost"
+        );
+
+
+    const invoiceInput =
+        document.getElementById(
+            "purchase-invoice"
+        );
+
+
+    const dateInput =
+        document.getElementById(
+            "purchase-date"
+        );
+
+
+    if (supplierSelect) {
+
+        supplierSelect.value =
+            purchase.supplierId || "";
+
     }
 
-    const state = loadState();
 
-    const product = state.inventory.find(p => p.id === purchase.productId);
+    if (productSelect) {
+
+        productSelect.value =
+            purchase.productId || "";
+
+    }
+
+
+    if (quantityInput) {
+
+        quantityInput.value =
+            purchase.quantity || "";
+
+    }
+
+
+    if (costInput) {
+
+        costInput.value =
+            purchase.cost || "";
+
+    }
+
+
+    if (invoiceInput) {
+
+        invoiceInput.value =
+            purchase.invoice || "";
+
+    }
+
+
+    if (
+        dateInput &&
+        purchase.date
+    ) {
+
+        dateInput.value =
+            purchase.date
+                .split("T")[0];
+
+    }
+
+
+    //--------------------------------------------------
+    // REVERSE OLD STOCK
+    //--------------------------------------------------
+
+    const state =
+        typeof loadState === "function"
+
+            ? loadState()
+
+            : {};
+
+
+    const inventory =
+        state.inventory || [];
+
+
+    const product =
+        inventory.find(
+
+            item =>
+
+                String(item.id) ===
+                String(
+                    purchase.productId
+                )
+
+        );
+
 
     if (product) {
-        product.stock = Number(product.stock || 0) - Number(purchase.quantity || 0);
 
-        if (product.stock < 0) {
+        product.stock =
+
+            Number(
+                product.stock || 0
+            )
+
+            -
+
+            Number(
+                purchase.quantity || 0
+            );
+
+
+        if (
+            product.stock < 0
+        ) {
+
             product.stock = 0;
+
         }
+
     }
 
-    purchases = purchases.filter(p => p.id !== purchaseId);
 
-    savePurchases(purchases);
+    //--------------------------------------------------
+    // REMOVE OLD PURCHASE
+    //--------------------------------------------------
 
-    saveState({
-        inventory: state.inventory,
-        sales: state.sales || []
-    });
+    purchases =
+        purchases.filter(
+
+            item =>
+
+                String(item.id) !==
+                String(purchaseId)
+
+        );
+
+
+    if (
+        typeof savePurchases ===
+        "function"
+    ) {
+
+        savePurchases(
+            purchases
+        );
+
+    }
+
+
+    if (
+        typeof saveState ===
+        "function"
+    ) {
+
+        saveState({
+
+            ...state,
+
+            inventory,
+
+            sales:
+                state.sales || []
+
+        });
+
+    }
+
 
     renderPurchaseHistory();
+
+    updatePurchaseSummary();
+
     populateProductDropdown();
 
-    if (typeof updateDashboardMetrics === "function") {
+
+    if (
+        typeof updateDashboardMetrics ===
+        "function"
+    ) {
+
         updateDashboardMetrics();
+
     }
 
 }
+
 
 //------------------------------------------------------
 // DELETE PURCHASE
 //------------------------------------------------------
 
-function deletePurchase(purchaseId) {
+function deletePurchase(
+    purchaseId
+) {
 
-    purchases = getPurchases();
+    purchases =
+        typeof getPurchases === "function"
 
-    const purchase = purchases.find(p => p.id === purchaseId);
+            ? getPurchases()
+
+            : [];
+
+
+    const purchase =
+        purchases.find(
+
+            item =>
+
+                String(item.id) ===
+                String(purchaseId)
+
+        );
+
 
     if (!purchase) return;
 
-    if (!confirm(`Delete purchase for "${purchase.productName}"?`)) return;
 
-    const state = loadState();
+    const confirmed =
+        confirm(
 
-    const product = state.inventory.find(p => p.id === purchase.productId);
+            `Delete purchase for "${
+
+                purchase.productName ||
+                "this product"
+
+            }"?`
+
+        );
+
+
+    if (!confirmed) return;
+
+
+    //--------------------------------------------------
+    // REDUCE STOCK
+    //--------------------------------------------------
+
+    const state =
+        typeof loadState === "function"
+
+            ? loadState()
+
+            : {};
+
+
+    const inventory =
+        state.inventory || [];
+
+
+    const product =
+        inventory.find(
+
+            item =>
+
+                String(item.id) ===
+                String(
+                    purchase.productId
+                )
+
+        );
+
 
     if (product) {
-        product.stock = Number(product.stock || 0) - Number(purchase.quantity || 0);
 
-        if (product.stock < 0) {
+        product.stock =
+
+            Number(
+                product.stock || 0
+            )
+
+            -
+
+            Number(
+                purchase.quantity || 0
+            );
+
+
+        if (
+            product.stock < 0
+        ) {
+
             product.stock = 0;
+
         }
+
     }
 
-    purchases = purchases.filter(p => p.id !== purchaseId);
 
-    savePurchases(purchases);
+    //--------------------------------------------------
+    // REMOVE PURCHASE
+    //--------------------------------------------------
 
-    saveState({
-        inventory: state.inventory,
-        sales: state.sales || []
-    });
+    purchases =
+        purchases.filter(
+
+            item =>
+
+                String(item.id) !==
+                String(purchaseId)
+
+        );
+
+
+    if (
+        typeof savePurchases ===
+        "function"
+    ) {
+
+        savePurchases(
+            purchases
+        );
+
+    }
+
+
+    if (
+        typeof saveState ===
+        "function"
+    ) {
+
+        saveState({
+
+            ...state,
+
+            inventory,
+
+            sales:
+                state.sales || []
+
+        });
+
+    }
+
 
     renderPurchaseHistory();
+
+    updatePurchaseSummary();
+
     populateProductDropdown();
 
-    if (typeof updateDashboardMetrics === "function") {
+
+    if (
+        typeof updateDashboardMetrics ===
+        "function"
+    ) {
+
         updateDashboardMetrics();
+
     }
 
 }
+
+
 //------------------------------------------------------
 // PURCHASE SEARCH
 //------------------------------------------------------
 
 function initializePurchaseSearch() {
 
-    const search = document.getElementById("purchase-search");
+    const search =
+        document.getElementById(
+            "purchase-search"
+        );
+
 
     if (!search) return;
 
-    search.addEventListener("input", () => {
 
-        renderPurchaseHistory(search.value);
+    search.addEventListener(
 
-    });
+        "input",
 
-    const clear = document.getElementById("clear-purchase-search");
+        () => {
+
+            renderPurchaseHistory(
+                search.value
+            );
+
+        }
+
+    );
+
+
+    const clear =
+        document.getElementById(
+            "clear-purchase-search"
+        );
+
 
     if (clear) {
 
-        clear.addEventListener("click", () => {
+        clear.addEventListener(
 
-            search.value = "";
+            "click",
 
-            renderPurchaseHistory();
+            () => {
 
-        });
+                search.value = "";
+
+                renderPurchaseHistory();
+
+            }
+
+        );
 
     }
 
 }
+
 
 //------------------------------------------------------
 // PURCHASE SUMMARY
@@ -386,29 +1221,79 @@ function initializePurchaseSearch() {
 
 function updatePurchaseSummary() {
 
-    const count = document.getElementById("purchase-count");
+    const count =
+        document.getElementById(
+            "purchase-count"
+        );
 
-    const total = document.getElementById("purchase-total");
 
-    purchases = getPurchases();
+    const total =
+        document.getElementById(
+            "purchase-total"
+        );
+
+
+    purchases =
+        typeof getPurchases === "function"
+
+            ? getPurchases()
+
+            : [];
+
 
     if (count) {
-        count.textContent = purchases.length;
+
+        count.textContent =
+            purchases.length;
+
     }
+
 
     if (total) {
 
-        const amount = purchases.reduce((sum, purchase) => {
+        const amount =
+            purchases.reduce(
 
-            return sum + Number(purchase.total || 0);
+                (
+                    sum,
+                    purchase
+                ) => {
 
-        }, 0);
+                    return (
 
-        total.textContent = formatCurrency(amount);
+                        sum
+
+                        +
+
+                        Number(
+                            purchase.total ||
+                            0
+                        )
+
+                    );
+
+                },
+
+                0
+
+            );
+
+
+        total.textContent =
+
+            typeof formatCurrency ===
+            "function"
+
+                ? formatCurrency(
+                    amount
+                )
+
+                : amount;
 
     }
 
 }
+
 
 //------------------------------------------------------
 // EXPORT PURCHASES
@@ -416,29 +1301,91 @@ function updatePurchaseSummary() {
 
 function exportPurchasesCSV() {
 
-    purchases = getPurchases();
+    purchases =
+        typeof getPurchases === "function"
+
+            ? getPurchases()
+
+            : [];
+
 
     const rows = [
-        ["Date", "Supplier", "Product", "Invoice", "Quantity", "Cost", "Total"]
+
+        [
+
+            "Date",
+
+            "Supplier",
+
+            "Product",
+
+            "Invoice",
+
+            "Quantity",
+
+            "Cost",
+
+            "Total"
+
+        ]
+
     ];
 
-    purchases.forEach(purchase => {
 
-        rows.push([
-            formatDate(purchase.date),
-            purchase.supplierName || "",
-            purchase.productName || "",
-            purchase.invoice || "",
-            purchase.quantity,
-            purchase.cost,
-            purchase.total
-        ]);
+    purchases.forEach(
 
-    });
+        purchase => {
 
-    downloadCSV("purchases.csv", rows);
+            rows.push([
+
+                typeof formatDate ===
+                "function"
+
+                    ? formatDate(
+                        purchase.date
+                    )
+
+                    : purchase.date,
+
+                purchase.supplierName ||
+                "Not specified",
+
+                purchase.productName ||
+                "",
+
+                purchase.invoice ||
+                "",
+
+                purchase.quantity,
+
+                purchase.cost,
+
+                purchase.total
+
+            ]);
+
+        }
+
+    );
+
+
+    if (
+        typeof downloadCSV ===
+        "function"
+    ) {
+
+        downloadCSV(
+
+            "purchases.csv",
+
+            rows
+
+        );
+
+    }
 
 }
+
 
 //------------------------------------------------------
 // INITIALIZE PURCHASES MODULE
@@ -446,7 +1393,15 @@ function exportPurchasesCSV() {
 
 function initializePurchasesModule() {
 
-    purchases = getPurchases();
+    purchases =
+
+        typeof getPurchases ===
+        "function"
+
+            ? getPurchases()
+
+            : [];
+
 
     populateSupplierDropdown();
 
@@ -458,31 +1413,52 @@ function initializePurchasesModule() {
 
     initializePurchaseSearch();
 
-    const form = document.getElementById("purchase-form");
+
+    const form =
+        document.getElementById(
+            "purchase-form"
+        );
+
 
     if (form) {
 
-        form.addEventListener("submit", e => {
+        form.addEventListener(
 
-            e.preventDefault();
+            "submit",
 
-            savePurchase();
+            event => {
 
-            updatePurchaseSummary();
+                event.preventDefault();
 
-        });
+                savePurchase();
+
+            }
+
+        );
 
     }
 
-    const exportButton = document.getElementById("export-purchases-btn");
+
+    const exportButton =
+        document.getElementById(
+            "export-purchases-btn"
+        );
+
 
     if (exportButton) {
 
-        exportButton.addEventListener("click", exportPurchasesCSV);
+        exportButton.addEventListener(
+
+            "click",
+
+            exportPurchasesCSV
+
+        );
 
     }
 
 }
+
 
 //------------------------------------------------------
 // REFRESH PURCHASES
@@ -490,7 +1466,15 @@ function initializePurchasesModule() {
 
 function refreshPurchases() {
 
-    purchases = getPurchases();
+    purchases =
+
+        typeof getPurchases ===
+        "function"
+
+            ? getPurchases()
+
+            : [];
+
 
     populateSupplierDropdown();
 
@@ -501,3 +1485,30 @@ function refreshPurchases() {
     updatePurchaseSummary();
 
 }
+
+
+//------------------------------------------------------
+// AUTO START
+//------------------------------------------------------
+
+document.addEventListener(
+
+    "DOMContentLoaded",
+
+    () => {
+
+        if (
+
+            document.getElementById(
+                "purchase-form"
+            )
+
+        ) {
+
+            initializePurchasesModule();
+
+        }
+
+    }
+
+);
