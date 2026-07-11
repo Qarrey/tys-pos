@@ -22,14 +22,10 @@
     <div class="status-card">
         <strong>TYS General Store</strong>
 
-        <nav class="top-nav">
-            <a href="index.html" class="nav-link">POS</a>
-            <a href="inventory.html" class="nav-link">Inventory</a>
-            <a href="profit.html" class="nav-link">Profit</a>
-            <a href="expenses.html" class="nav-link">Expenses</a>
-            <a href="reports.html" class="nav-link">Reports</a>
-            <a href="settings.html" class="nav-link">Settings</a>
-        </nav>
+        <nav
+    id="main-navigation"
+    class="top-nav">
+</nav>
     </div>
 </header>
 
@@ -111,12 +107,10 @@
 
 </div>
 
-<script src="inventory-seed.js"></script>
-<script src="js/database.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/cloud-sales.js"></script>
-<script src="js/daily-summary.js"></script>
-<script src="js/navigation.js"></script>
+<!-- ==================================================
+SUPABASE AND SECURITY
+=================================================== -->
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script src="js/supabase-config.js"></script>
@@ -126,5 +120,34 @@
 <script src="js/user-session.js"></script>
 
 <script src="js/role-guard.js"></script>
+
+
+<!-- ==================================================
+LOCAL POS DATA
+=================================================== -->
+
+<script src="inventory-seed.js"></script>
+
+<script src="js/database.js"></script>
+
+<script src="js/utils.js"></script>
+
+
+<!-- ==================================================
+CLOUD SALES
+=================================================== -->
+
+<script src="js/cloud-sales.js"></script>
+
+
+<!-- ==================================================
+DAILY SUMMARY
+=================================================== -->
+
+<script src="js/daily-summary.js"></script>
+
+<script src="js/navigation.js"></script>
+
+
 </body>
 </html>
