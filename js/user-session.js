@@ -3,9 +3,10 @@
 // CONFIRMED USER SESSION AND ROLE
 //======================================================
 
-window.currentPOSUser = window.currentPOSUser || null;
+window.currentPOSUser = null;
 window.isConfirmedAdmin = false;
 window.posUserReady = null;
+window.posSessionState = "idle";
 
 function normalizePOSRole(role) {
     return String(role || "cashier").trim().toLowerCase();
@@ -15,20 +16,34 @@ function normalizePOSStatus(status) {
     return String(status || "active").trim().toLowerCase();
 }
 
+function clearPOSUserState() {
+    window.currentPOSUser = null;
+    window.isConfirmedAdmin = false;
+    window.posSessionState = "signed-out";
+}
+
 async function fetchCurrentPOSUser() {
     if (typeof supabaseClient === "undefined") {
         console.error("Supabase client is unavailable.");
-        window.currentPOSUser = null;
-        window.isConfirmedAdmin = false;
+        clearPOSUserState();
         return null;
     }
 
-    const { data: authData, error: authError } =
-        await supabaseClient.auth.getUser();
+    window.posSessionState = "loading";
 
-    if (authError || !authData.user) {
-        window.currentPOSUser = null;
-        window.isConfirmedAdmin = false;
+    const { data: sessionData, error: sessionError } =
+        await supabaseClient.auth.getSession();
+
+    if (sessionError) {
+        console.error("Could not read login session:", sessionError);
+        clearPOSUserState();
+        return null;
+    }
+
+    const session = sessionData.session;
+
+    if (!session?.user) {
+        clearPOSUserState();
         return null;
     }
 
@@ -36,51 +51,80 @@ async function fetchCurrentPOSUser() {
         await supabaseClient
             .from("profiles")
             .select("id, full_name, role, status")
-            .eq("id", authData.user.id)
+            .eq("id", session.user.id)
             .maybeSingle();
 
-    if (profileError || !profile) {
-        console.error("Could not load confirmed POS profile:", profileError);
+    if (profileError) {
+        console.error("Could not load POS profile:", profileError);
         window.currentPOSUser = {
-            id: authData.user.id,
-            email: authData.user.email || "",
-            fullName: authData.user.email || "User",
+            id: session.user.id,
+            email: session.user.email || "",
+            fullName: session.user.email || "User",
             role: "cashier",
-            status: "inactive",
-            confirmed: false
+            status: "unknown",
+            confirmed: false,
+            profileError: profileError.message || "Profile query failed"
         };
         window.isConfirmedAdmin = false;
+        window.posSessionState = "profile-error";
         return window.currentPOSUser;
     }
 
+    if (!profile) {
+        console.error("No POS profile exists for the logged-in account.");
+        window.currentPOSUser = {
+            id: session.user.id,
+            email: session.user.email || "",
+            fullName: session.user.email || "User",
+            role: "cashier",
+            status: "unknown",
+            confirmed: false,
+            profileError: "No profile found"
+        };
+        window.isConfirmedAdmin = false;
+        window.posSessionState = "profile-error";
+        return window.currentPOSUser;
+    }
+
+    const role = normalizePOSRole(profile.role);
+    const status = normalizePOSStatus(profile.status);
+
     window.currentPOSUser = {
         id: profile.id,
-        email: authData.user.email || "",
-        fullName: profile.full_name || authData.user.email || "User",
-        role: normalizePOSRole(profile.role),
-        status: normalizePOSStatus(profile.status),
+        email: session.user.email || "",
+        fullName: profile.full_name || session.user.email || "User",
+        role,
+        status,
         confirmed: true
     };
 
     window.isConfirmedAdmin =
-        window.currentPOSUser.confirmed === true &&
-        window.currentPOSUser.status === "active" &&
-        window.currentPOSUser.role === "admin";
+        status === "active" && role === "admin";
+
+    window.posSessionState = "ready";
+
+    document.dispatchEvent(new CustomEvent("pos-user-ready", {
+        detail: {
+            profile: window.currentPOSUser,
+            isAdmin: window.isConfirmedAdmin
+        }
+    }));
 
     return window.currentPOSUser;
 }
 
 async function loadCurrentPOSUser(forceRefresh = false) {
-    if (!forceRefresh && window.posUserReady) {
-        return window.posUserReady;
+    if (forceRefresh) {
+        window.posUserReady = null;
     }
 
-    window.posUserReady = fetchCurrentPOSUser().catch(error => {
-        console.error("POS user loading failed:", error);
-        window.currentPOSUser = null;
-        window.isConfirmedAdmin = false;
-        return null;
-    });
+    if (!window.posUserReady) {
+        window.posUserReady = fetchCurrentPOSUser().catch(error => {
+            console.error("POS user loading failed:", error);
+            clearPOSUserState();
+            return null;
+        });
+    }
 
     return window.posUserReady;
 }
@@ -91,9 +135,8 @@ function isAdmin() {
 
 function isCashier() {
     return Boolean(
-        window.currentPOSUser &&
-        window.currentPOSUser.confirmed === true &&
-        window.currentPOSUser.status === "active" &&
-        window.currentPOSUser.role === "cashier"
+        window.currentPOSUser?.confirmed === true &&
+        window.currentPOSUser?.status === "active" &&
+        window.currentPOSUser?.role === "cashier"
     );
 }

@@ -22,21 +22,30 @@ function revealAdminOnlyElements() {
 async function initializeAdminUIGuard() {
     hideAdminOnlyElements();
 
+    const authOkay = window.posAuthReady
+        ? await window.posAuthReady
+        : true;
+
+    if (!authOkay) return false;
+
     const profile = typeof loadCurrentPOSUser === "function"
         ? await loadCurrentPOSUser()
         : null;
 
     const confirmedAdmin = Boolean(
-        profile &&
-        profile.confirmed === true &&
-        profile.status === "active" &&
-        profile.role === "admin" &&
-        window.isConfirmedAdmin === true
+        profile?.confirmed === true &&
+        profile?.status === "active" &&
+        profile?.role === "admin"
     );
+
+    window.isConfirmedAdmin = confirmedAdmin;
 
     document.documentElement.classList.add("role-confirmed");
     document.documentElement.classList.toggle("admin-confirmed", confirmedAdmin);
-    document.documentElement.classList.toggle("cashier-confirmed", !confirmedAdmin);
+    document.documentElement.classList.toggle(
+        "cashier-confirmed",
+        Boolean(profile?.confirmed && !confirmedAdmin)
+    );
 
     if (confirmedAdmin) revealAdminOnlyElements();
 

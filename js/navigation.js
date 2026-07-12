@@ -10,6 +10,11 @@ async function loadNavigation() {
     navContainer.innerHTML = "";
     navContainer.hidden = true;
 
+    if (window.posRoleReady) {
+        const accessGranted = await window.posRoleReady;
+        if (!accessGranted) return;
+    }
+
     const profile = typeof loadCurrentPOSUser === "function"
         ? await loadCurrentPOSUser()
         : null;
@@ -63,23 +68,22 @@ async function loadNavigation() {
         </div>`;
 
     navContainer.innerHTML =
-        (window.isConfirmedAdmin === true ? adminNavigation : cashierNavigation) +
+        (profile.role === "admin" ? adminNavigation : cashierNavigation) +
         `<div class="nav-group"><span class="nav-group-title">Account</span>
             <a href="#" id="logout-btn" class="nav-link">Logout</a>
         </div>`;
 
     navContainer.querySelectorAll(".nav-link").forEach(link => {
-        if (link.getAttribute("href") === currentPage) link.classList.add("active");
+        if (link.getAttribute("href") === currentPage) {
+            link.classList.add("active");
+        }
     });
 
-    const logoutBtn = document.getElementById("logout-btn");
-    if (logoutBtn) {
-        logoutBtn.addEventListener("click", async event => {
-            event.preventDefault();
-            await supabaseClient.auth.signOut();
-            window.location.replace("login.html");
-        });
-    }
+    document.getElementById("logout-btn")?.addEventListener("click", async event => {
+        event.preventDefault();
+        await supabaseClient.auth.signOut();
+        redirectPOSOnce("login.html");
+    });
 
     navContainer.hidden = false;
 }

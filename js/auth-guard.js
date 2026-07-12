@@ -1,14 +1,45 @@
 //======================================================
 // TYS POS
-// AUTH GUARD
+// SAFE AUTHENTICATION GUARD
 //======================================================
 
-async function protectPage() {
-    const { data } = await supabaseClient.auth.getSession();
+window.__posRedirecting = window.__posRedirecting || false;
 
-    if (!data.session) {
-        window.location.href = "login.html";
+function redirectPOSOnce(target) {
+    if (window.__posRedirecting) return;
+    window.__posRedirecting = true;
+    window.location.replace(target);
+}
+
+async function protectPageAuthentication() {
+    if (typeof supabaseClient === "undefined") {
+        console.error("Supabase client is unavailable.");
+        return false;
+    }
+
+    try {
+        const { data, error } = await supabaseClient.auth.getSession();
+
+        if (error) {
+            console.error("Could not verify login session:", error);
+            return false;
+        }
+
+        if (!data.session) {
+            redirectPOSOnce("login.html");
+            return false;
+        }
+
+        document.documentElement.classList.add("auth-confirmed");
+        return true;
+    } catch (error) {
+        console.error("Authentication guard failed:", error);
+        return false;
     }
 }
 
-document.addEventListener("DOMContentLoaded", protectPage);
+window.posAuthReady = new Promise(resolve => {
+    document.addEventListener("DOMContentLoaded", async () => {
+        resolve(await protectPageAuthentication());
+    }, { once: true });
+});
