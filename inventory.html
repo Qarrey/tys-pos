@@ -354,13 +354,10 @@ IMPORT / EXPORT
         <div class="field full">
 
             <input
-
-                id="inventory-import-file"
-
-                type="file"
-
-                accept=".csv,.xlsx,.xls">
-
+    id="inventory-import-file"
+    type="file"
+    accept=".csv,.xlsx,.xls"
+    hidden>
         </div>
 
     </div>
@@ -541,27 +538,48 @@ Select a product using the <strong>+ Stock</strong> or <strong>- Stock</strong> 
 SCRIPTS
 ====================================================== -->
 
-<script src="inventory-seed.js"></script>
+<!-- ======================================================
+SCRIPTS
+====================================================== -->
 
-<script src="js/database.js"></script>
-<script src="js/utils.js"></script>
-<script src="js/dashboard.js"></script>
-<script src="js/categories.js"></script>
-<script src="js/inventory.js"></script>
-<script src="js/purchases.js"></script>
-<script src="app.js"></script>
-<script src="js/navigation.js"></script>
+<!-- ======================================================
+SCRIPTS
+====================================================== -->
+
+<!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <script src="js/supabase-config.js"></script>
+
+<!-- DISABLE OLD SERVICE WORKER -->
 <script src="js/disable-service-worker.js"></script>
 
+<!-- AUTHENTICATION AND ROLES -->
 <script src="js/auth-guard.js"></script>
-
 <script src="js/user-session.js"></script>
 <script src="js/admin-ui-guard.js"></script>
-
 <script src="js/role-guard.js"></script>
+
+<!-- EXCEL SUPPORT -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<!-- LOCAL DATABASE -->
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+
+<!-- APP GLOBAL VARIABLES -->
+<script src="app.js"></script>
+
+<!-- CLOUD PRODUCTS -->
+<script src="js/cloud-products.js"></script>
+
+<!-- INVENTORY MODULES -->
+<script src="js/categories.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/inventory.js"></script>
+
+<!-- NAVIGATION -->
+<script src="js/navigation.js"></script>
 </div>
 
 </body>
