@@ -4,86 +4,221 @@
 //======================================================
 
 async function loginUser(event) {
+
     event.preventDefault();
 
-    const email = document.getElementById("login-email").value.trim();
-    const password = document.getElementById("login-password").value;
-    const button = document.getElementById("login-btn");
-    const message = document.getElementById("login-message");
+
+    const email =
+
+        document
+            .getElementById("login-email")
+            .value
+            .trim();
+
+
+    const password =
+
+        document
+            .getElementById("login-password")
+            .value;
+
+
+    const button =
+
+        document.getElementById(
+            "login-btn"
+        );
+
+
+    const message =
+
+        document.getElementById(
+            "login-message"
+        );
+
 
     button.disabled = true;
-    button.textContent = "Signing in...";
+
+    button.textContent =
+        "Signing in...";
+
+
     message.textContent = "";
-    message.className = "feedback-message";
+
+    message.className =
+        "feedback-message";
+
 
     try {
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
-            email,
-            password
-        });
 
-        if (error) throw error;
-        if (!data.session?.user) throw new Error("Login was unsuccessful.");
+        const {
 
-        const { data: profile, error: profileError } = await supabaseClient
-            .from("profiles")
-            .select("id, role, status")
-            .eq("id", data.session.user.id)
-            .maybeSingle();
+            data,
 
-        if (profileError || !profile) {
-            await supabaseClient.auth.signOut();
-            throw new Error("Your login exists, but no POS profile was found.");
+            error
+
+        } =
+
+        await supabaseClient
+            .auth
+            .signInWithPassword({
+
+                email,
+
+                password
+
+            });
+
+
+        if (error) {
+
+            throw error;
+
         }
 
-        if (String(profile.status || "").trim().toLowerCase() !== "active") {
-            await supabaseClient.auth.signOut();
-            throw new Error("This POS account is inactive.");
+
+        if (!data.user) {
+
+            throw new Error(
+
+                "Login was unsuccessful."
+
+            );
+
         }
 
-        message.textContent = "Login successful. Opening POS...";
-        message.className = "feedback-message success";
 
-        window.location.replace("index.html");
+        message.textContent =
+
+            "Login successful. Opening POS...";
+
+
+        message.className =
+
+            "feedback-message success";
+
+
+        setTimeout(() => {
+
+            window.location.href =
+
+                "index.html";
+
+        }, 700);
+
+
     } catch (error) {
-        console.error("Login error:", error);
-        message.textContent = error.message || "Could not sign in.";
-        message.className = "feedback-message error";
+
+        console.error(
+
+            "Login error:",
+
+            error
+
+        );
+
+
+        message.textContent =
+
+            error.message ||
+
+            "Could not sign in.";
+
+
+        message.className =
+
+            "feedback-message error";
+
+
+    } finally {
+
         button.disabled = false;
-        button.textContent = "Sign In";
+
+        button.textContent =
+
+            "Sign In";
+
     }
+
 }
+
+
+//------------------------------------------------------
+// CHECK EXISTING LOGIN
+//------------------------------------------------------
+
+//------------------------------------------------------
+// CHECK EXISTING LOGIN
+//------------------------------------------------------
 
 async function checkExistingLogin() {
     try {
-        const { data, error } = await supabaseClient.auth.getSession();
+        const { data, error } =
+            await supabaseClient.auth.getSession();
 
-        if (error || !data.session?.user) return;
+        if (error) {
+            console.error(
+                "Could not check existing login:",
+                error
+            );
 
-        const { data: profile, error: profileError } = await supabaseClient
-            .from("profiles")
-            .select("id, status")
-            .eq("id", data.session.user.id)
-            .maybeSingle();
-
-        if (profileError || !profile) {
-            await supabaseClient.auth.signOut();
             return;
         }
 
-        if (String(profile.status || "").trim().toLowerCase() !== "active") {
-            await supabaseClient.auth.signOut();
-            return;
+        /*
+         * Only redirect when a real session exists.
+         * Use replace so Login does not remain in the
+         * browser history.
+         */
+        if (data.session) {
+            window.location.replace(
+                "index.html"
+            );
         }
 
-        window.location.replace("index.html");
     } catch (error) {
-        console.error("Existing-login check failed:", error);
+        console.error(
+            "Existing login check failed:",
+            error
+        );
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("login-form");
-    if (form) form.addEventListener("submit", loginUser);
-    checkExistingLogin();
-}, { once: true });
+//------------------------------------------------------
+// INITIALIZE
+//------------------------------------------------------
+
+document.addEventListener(
+
+    "DOMContentLoaded",
+
+    () => {
+
+
+        const form =
+
+            document.getElementById(
+
+                "login-form"
+
+            );
+
+
+        if (form) {
+
+            form.addEventListener(
+
+                "submit",
+
+                loginUser
+
+            );
+
+        }
+
+
+        checkExistingLogin();
+
+    }
+
+);

@@ -753,18 +753,12 @@ function getSelectedCashier() {
 //======================================================
 
 function getCurrentPOSRole() {
-    return String(window.currentPOSUser?.role || "")
+    return String(
+        window.currentPOSUser?.role ||
+        ""
+    )
         .trim()
         .toLowerCase();
-}
-
-function hasConfirmedAdminAccess() {
-    return Boolean(
-        window.isConfirmedAdmin === true &&
-        window.currentPOSUser?.confirmed === true &&
-        window.currentPOSUser?.status === "active" &&
-        getCurrentPOSRole() === "admin"
-    );
 }
 
 
@@ -833,7 +827,8 @@ async function configureSaleDateAccess() {
     }
 
     const isAdmin =
-        hasConfirmedAdminAccess();
+        getCurrentPOSRole() ===
+        "admin";
 
     if (!isAdmin) {
         return;
@@ -852,7 +847,8 @@ async function configureSaleDateAccess() {
 function getSelectedSaleDate() {
     // Cashiers must always use the real checkout time.
     if (
-        !hasConfirmedAdminAccess()
+        getCurrentPOSRole() !==
+        "admin"
     ) {
         return new Date()
             .toISOString();
@@ -1091,7 +1087,8 @@ async function checkout() {
     }
 
     if (
-        hasConfirmedAdminAccess()
+        getCurrentPOSRole() ===
+        "admin"
     ) {
         setSaleDateToNow();
     } else {

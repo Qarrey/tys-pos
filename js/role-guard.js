@@ -3,87 +3,203 @@
 // SAFE PAGE ROLE GUARD
 //======================================================
 
-const CASHIER_ALLOWED_PAGES = new Set([
-    "",
-    "index.html",
-    "purchases.html",
-    "register.html"
-]);
-
-function showPOSAccessMessage(title, message) {
-    document.body.style.visibility = "visible";
-    document.body.innerHTML = `
-        <main class="panel" style="max-width:640px;margin:40px auto;">
-            <div class="inventory-card">
-                <h2>${title}</h2>
-                <p>${message}</p>
-                <div class="form-actions">
-                    <button id="pos-retry-btn" class="primary-btn" type="button">Retry</button>
-                    <button id="pos-signout-btn" class="secondary-btn" type="button">Log Out</button>
-                </div>
-            </div>
-        </main>
-    `;
-
-    document.getElementById("pos-retry-btn")?.addEventListener("click", () => {
-        window.location.reload();
-    });
-
-    document.getElementById("pos-signout-btn")?.addEventListener("click", async () => {
-        try {
-            await supabaseClient.auth.signOut();
-        } finally {
-            redirectPOSOnce("login.html");
-        }
-    });
-}
-
 async function protectByRole() {
     const currentPage =
-        window.location.pathname.split("/").pop() || "index.html";
+        window.location.pathname
+            .split("/")
+            .pop() || "index.html";
 
-    const authOkay = window.posAuthReady
-        ? await window.posAuthReady
-        : await protectPageAuthentication();
+    const cashierAllowedPages = new Set([
+        "",
+        "index.html",
+        "purchases.html",
+        "register.html"
+    ]);
 
-    if (!authOkay) return false;
+    try {
+        //--------------------------------------------------
+        // CONFIRM AUTH SESSION FIRST
+        //--------------------------------------------------
 
-    const profile = typeof loadCurrentPOSUser === "function"
-        ? await loadCurrentPOSUser()
-        : null;
+        const { data, error } =
+            await supabaseClient.auth.getSession();
 
-    if (!profile || profile.confirmed !== true) {
-        showPOSAccessMessage(
-            "Profile could not be loaded",
-            "Your login is active, but the POS profile could not be confirmed. This page will not redirect repeatedly. Retry the profile check or log out."
+        if (error) {
+            console.error(
+                "Could not confirm session:",
+                error
+            );
+
+            return false;
+        }
+
+        if (!data.session) {
+            window.location.replace(
+                "login.html"
+            );
+
+            return false;
+        }
+
+        //--------------------------------------------------
+        // LOAD CONFIRMED PROFILE
+        //--------------------------------------------------
+
+        let profile = null;
+
+        if (
+            typeof loadCurrentPOSUser ===
+            "function"
+        ) {
+            profile =
+                await loadCurrentPOSUser(
+                    true
+                );
+        }
+
+        /*
+         * Do not redirect back and forth when the
+         * session exists but the profile failed to load.
+         */
+        if (
+            !profile ||
+            profile.confirmed !== true
+        ) {
+            console.error(
+                "The user is logged in, but the POS profile could not be confirmed."
+            );
+
+            document.body.innerHTML = `
+                <main class="panel" style="max-width:600px;margin:40px auto;">
+                    <div class="inventory-card">
+                        <h2>Profile could not be loaded</h2>
+
+                        <p>
+                            Your login session is active, but your POS
+                            profile could not be confirmed.
+                        </p>
+
+                        <button
+                            id="retry-profile-btn"
+                            class="primary-btn"
+                            type="button">
+                            Retry
+                        </button>
+
+                        <button
+                            id="profile-logout-btn"
+                            class="secondary-btn"
+                            type="button">
+                            Log Out
+                        </button>
+                    </div>
+                </main>
+            `;
+
+            document
+                .getElementById(
+                    "retry-profile-btn"
+                )
+                ?.addEventListener(
+                    "click",
+                    () => {
+                        location.reload();
+                    }
+                );
+
+            document
+                .getElementById(
+                    "profile-logout-btn"
+                )
+                ?.addEventListener(
+                    "click",
+                    async () => {
+                        await supabaseClient
+                            .auth
+                            .signOut();
+
+                        window.location.replace(
+                            "login.html"
+                        );
+                    }
+                );
+
+            return false;
+        }
+
+        //--------------------------------------------------
+        // BLOCK INACTIVE USERS
+        //--------------------------------------------------
+
+        if (
+            String(profile.status)
+                .toLowerCase() !==
+            "active"
+        ) {
+            await supabaseClient.auth.signOut();
+
+            window.location.replace(
+                "login.html"
+            );
+
+            return false;
+        }
+
+        //--------------------------------------------------
+        // PAGE ACCESS
+        //--------------------------------------------------
+
+        const isAdmin =
+            window.isConfirmedAdmin === true;
+
+        const adminOnlyPage =
+            document.body
+                ?.hasAttribute(
+                    "data-admin-page"
+                );
+
+        const cashierCanOpen =
+            cashierAllowedPages.has(
+                currentPage
+            );
+
+        if (
+            !isAdmin &&
+            (
+                adminOnlyPage ||
+                !cashierCanOpen
+            )
+        ) {
+            window.location.replace(
+                "index.html"
+            );
+
+            return false;
+        }
+
+        document.documentElement
+            .classList
+            .add(
+                "page-access-confirmed"
+            );
+
+        return true;
+
+    } catch (error) {
+        console.error(
+            "Role guard failed:",
+            error
         );
+
         return false;
     }
-
-    if (profile.status !== "active") {
-        showPOSAccessMessage(
-            "Account is inactive",
-            "This POS account is not active. Ask an administrator to activate it, then retry."
-        );
-        return false;
-    }
-
-    const isConfirmedAdmin = profile.role === "admin";
-    const pageMarkedAdmin = document.body?.hasAttribute("data-admin-page");
-    const cashierCanOpen = CASHIER_ALLOWED_PAGES.has(currentPage);
-
-    if (!isConfirmedAdmin && (pageMarkedAdmin || !cashierCanOpen)) {
-        redirectPOSOnce("index.html");
-        return false;
-    }
-
-    document.documentElement.classList.add("page-access-confirmed");
-    document.body.style.visibility = "visible";
-    return true;
 }
 
-window.posRoleReady = new Promise(resolve => {
-    document.addEventListener("DOMContentLoaded", async () => {
-        resolve(await protectByRole());
-    }, { once: true });
-});
+
+document.addEventListener(
+    "DOMContentLoaded",
+    protectByRole,
+    {
+        once: true
+    }
+);
