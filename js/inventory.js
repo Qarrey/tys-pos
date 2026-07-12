@@ -1389,22 +1389,30 @@ function mapExcelRowToProduct(
         );
 
 
-    const sellingPrice =
-        getExcelNumber(
-            getExcelRowValue(
-                row,
-                [
-                    "Selling Price",
-                    "Sale Price",
-                    "Retail Price",
-                    "Price",
-                    "SP"
-                ]
-            ),
-            0
+    const sellingPriceValue =
+    getExcelRowValue(
+        row,
+        [
+            "SALES PRICE",
+            "Sales Price",
+            "Selling Price",
+            "Sale Price",
+            "Retail Price",
+            "Unit Price",
+            "Price",
+            "SP"
+        ]
+    );
+
+const sellingPrice =
+    sellingPriceValue === "" ||
+    sellingPriceValue === null ||
+    sellingPriceValue === undefined
+        ? null
+        : getExcelNumber(
+            sellingPriceValue,
+            null
         );
-
-
     //--------------------------------------------------
     // ON HAND IS THE CURRENT EXCEL STOCK
     //--------------------------------------------------
