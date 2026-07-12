@@ -14,7 +14,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const state = loadState();
 
-    inventory = normalizeInventory(state.inventory || []);
+    inventory =
+    typeof normalizeInventory ===
+    "function"
+        ? normalizeInventory(
+            state.inventory || []
+        )
+        : (
+            state.inventory || []
+        );
     sales = state.sales || [];
 
     suppliers = getSuppliers();
