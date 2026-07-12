@@ -895,3 +895,53 @@ POS PRODUCTS + SIDE CART LAYOUT
     }
 
 }
+/* =====================================================
+MOBILE CART
+===================================================== */
+
+.mobile-cart-toggle {
+    display: none;
+}
+
+@media (max-width: 768px) {
+
+    .pos-layout {
+        display: block;
+    }
+
+    .cart-panel {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        overflow-y: auto;
+        background: #ffffff;
+        padding: 20px;
+    }
+
+    .cart-panel.mobile-open {
+        display: block;
+    }
+
+    .mobile-cart-toggle {
+        display: block;
+        position: fixed;
+        right: 16px;
+        bottom: 16px;
+        z-index: 10000;
+        border: none;
+        border-radius: 999px;
+        padding: 14px 20px;
+        font-weight: 700;
+        background: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    }
+}
+
+/* TYS ROLE GUARD */
+[data-admin-only] { display: none !important; }
+html.admin-confirmed [data-admin-only] { display: revert !important; }
+body[data-admin-page] { visibility: hidden; }
+html.admin-confirmed.page-access-confirmed body[data-admin-page] { visibility: visible; }
+#main-navigation[hidden] { display: none !important; }

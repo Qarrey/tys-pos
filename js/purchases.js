@@ -415,54 +415,48 @@ function savePurchase() {
     populateProductDropdown();
 
 
-    if (
-        typeof renderInventory ===
-        "function"
-    ) {
+   populateSupplierDropdown();
 
-        renderInventory();
-
-    }
+populateProductDropdown();
 
 
-    if (
-        typeof updateDashboardMetrics ===
-        "function"
-    ) {
+//--------------------------------------------------
+// SAVE PURCHASE TO SUPABASE
+//--------------------------------------------------
 
-        updateDashboardMetrics();
+if (
+    typeof savePurchaseToSupabase ===
+    "function"
+) {
 
-    }
+    savePurchaseToSupabase(purchase)
+        .then(result => {
 
+            if (result) {
 
-    //--------------------------------------------------
-    // RESET FORM
-    //--------------------------------------------------
+                console.log(
+                    "Purchase saved locally and online."
+                );
 
-    const form =
-        document.getElementById(
-            "purchase-form"
-        );
+            }
 
+        })
+        .catch(error => {
 
-    if (form) {
+            console.error(
+                "Cloud purchase save failed:",
+                error
+            );
 
-        form.reset();
-
-    }
-
-
-    populateSupplierDropdown();
-
-    populateProductDropdown();
-
-
-    alert(
-        "Purchase saved successfully."
-    );
+        });
 
 }
 
+
+alert(
+    "Purchase saved successfully."
+);
+}
 
 //------------------------------------------------------
 // RENDER PURCHASE HISTORY

@@ -27,17 +27,40 @@ function saveExpense() {
     }
 
     expenses = getExpenses();
+const expense = {
+    id: generateId("EXP-"),
+    name,
+    category,
+    amount,
+    notes,
+    date
+};
 
-    expenses.unshift({
-        id: generateId("EXP-"),
-        name,
-        category,
-        amount,
-        notes,
-        date
-    });
+expenses.unshift(expense);
 
-    saveExpenses(expenses);
+saveExpenses(expenses);
+
+
+// SAVE TO SUPABASE
+
+if (
+    typeof saveExpenseToSupabase === "function"
+) {
+    saveExpenseToSupabase(expense)
+        .then(result => {
+            if (result) {
+                console.log(
+                    "Expense saved locally and online."
+                );
+            }
+        })
+        .catch(error => {
+            console.error(
+                "Cloud expense save failed:",
+                error
+            );
+        });
+}
 
     renderExpenses();
     updateExpenseSummary();
@@ -120,8 +143,25 @@ function deleteExpense(id) {
 
     saveExpenses(expenses);
 
-    renderExpenses();
-    updateExpenseSummary();
+
+// DELETE FROM SUPABASE
+
+if (
+    typeof deleteExpenseFromSupabase === "function"
+) {
+    deleteExpenseFromSupabase(id)
+        .catch(error => {
+            console.error(
+                "Cloud expense deletion failed:",
+                error
+            );
+        });
+}
+
+
+renderExpenses();
+
+updateExpenseSummary();
 }
 
 //------------------------------------------------------

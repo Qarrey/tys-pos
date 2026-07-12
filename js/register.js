@@ -1,258 +1,912 @@
 //======================================================
 // TYS POS v3
 // CASH REGISTER / SHIFT MODULE
+// LOCAL + SUPABASE
 //======================================================
 
-const REGISTER_KEY = "tys-pos-registers";
-const ACTIVE_REGISTER_KEY = "tys-pos-active-register";
+const REGISTER_KEY =
+    "tys-pos-registers";
 
-//------------------------------------------------------
-// STORAGE
-//------------------------------------------------------
+const ACTIVE_REGISTER_KEY =
+    "tys-pos-active-register";
+
+
+//======================================================
+// LOCAL STORAGE
+//======================================================
 
 function getRegisters() {
     try {
-        return JSON.parse(localStorage.getItem(REGISTER_KEY)) || [];
-    } catch {
+        return (
+            JSON.parse(
+                localStorage.getItem(
+                    REGISTER_KEY
+                )
+            ) || []
+        );
+
+    } catch (error) {
+        console.error(
+            "Could not load register history:",
+            error
+        );
+
         return [];
     }
 }
 
+
 function saveRegisters(registers) {
-    localStorage.setItem(REGISTER_KEY, JSON.stringify(registers));
+    localStorage.setItem(
+        REGISTER_KEY,
+        JSON.stringify(
+            registers || []
+        )
+    );
 }
+
 
 function getActiveRegister() {
     try {
-        return JSON.parse(localStorage.getItem(ACTIVE_REGISTER_KEY)) || null;
-    } catch {
+        return (
+            JSON.parse(
+                localStorage.getItem(
+                    ACTIVE_REGISTER_KEY
+                )
+            ) || null
+        );
+
+    } catch (error) {
+        console.error(
+            "Could not load active register:",
+            error
+        );
+
         return null;
     }
 }
 
+
 function saveActiveRegister(register) {
-    localStorage.setItem(ACTIVE_REGISTER_KEY, JSON.stringify(register));
+    localStorage.setItem(
+        ACTIVE_REGISTER_KEY,
+        JSON.stringify(register)
+    );
 }
+
 
 function clearActiveRegister() {
-    localStorage.removeItem(ACTIVE_REGISTER_KEY);
+    localStorage.removeItem(
+        ACTIVE_REGISTER_KEY
+    );
 }
 
-//------------------------------------------------------
-// SALES DURING REGISTER SHIFT
-//------------------------------------------------------
 
-function getRegisterCashSales(openedAt = null, closedAt = null) {
-    const sales = loadState().sales || [];
+//======================================================
+// CURRENT USER
+//======================================================
 
-    return sales.reduce((sum, sale) => {
-        return sum + Number(sale.total || 0);
-    }, 0);
+function getRegisterUser() {
+    let sessionUser = null;
+
+    try {
+        if (
+            typeof getCurrentUser ===
+            "function"
+        ) {
+            sessionUser =
+                getCurrentUser();
+        }
+    } catch (error) {
+        console.warn(
+            "Could not read current POS user:",
+            error
+        );
+    }
+
+    return {
+        id:
+            sessionUser?.id ||
+            sessionUser?.userId ||
+            "",
+
+        name:
+            sessionUser?.name ||
+            sessionUser?.fullName ||
+            sessionUser?.email ||
+            "Admin"
+    };
 }
-//------------------------------------------------------
+
+
+//======================================================
+// SALE DATE
+//======================================================
+
+function getRegisterSaleDate(sale) {
+    return new Date(
+        sale.saleDate ||
+        sale.sale_date ||
+        sale.date ||
+        sale.createdAt ||
+        sale.created_at ||
+        0
+    );
+}
+
+
+//======================================================
+// PAYMENT METHOD
+//======================================================
+
+function getRegisterPaymentMethod(sale) {
+    return String(
+        sale.paymentMethod ||
+        sale.payment_method ||
+        "Cash"
+    )
+        .trim()
+        .toLowerCase();
+}
+
+
+//======================================================
+// CASH SALES DURING SHIFT
+//======================================================
+
+function getRegisterCashSales(
+    openedAt = null,
+    closedAt = null
+) {
+    let sales = [];
+
+    try {
+        if (
+            typeof loadState ===
+            "function"
+        ) {
+            sales =
+                loadState().sales ||
+                [];
+        }
+
+    } catch (error) {
+        console.error(
+            "Could not load sales for register:",
+            error
+        );
+
+        return 0;
+    }
+
+    const openingTime =
+        openedAt
+            ? new Date(openedAt)
+            : null;
+
+    const closingTime =
+        closedAt
+            ? new Date(closedAt)
+            : null;
+
+
+    return sales.reduce(
+        (total, sale) => {
+
+            //--------------------------------------------------
+            // ONLY CASH SALES
+            //--------------------------------------------------
+
+            const paymentMethod =
+                getRegisterPaymentMethod(
+                    sale
+                );
+
+            if (
+                paymentMethod !==
+                "cash"
+            ) {
+                return total;
+            }
+
+
+            //--------------------------------------------------
+            // ONLY SALES DURING THIS SHIFT
+            //--------------------------------------------------
+
+            const saleDate =
+                getRegisterSaleDate(
+                    sale
+                );
+
+            if (
+                Number.isNaN(
+                    saleDate.getTime()
+                )
+            ) {
+                return total;
+            }
+
+            if (
+                openingTime &&
+                saleDate < openingTime
+            ) {
+                return total;
+            }
+
+            if (
+                closingTime &&
+                saleDate > closingTime
+            ) {
+                return total;
+            }
+
+
+            return (
+                total +
+                Number(
+                    sale.total || 0
+                )
+            );
+
+        },
+        0
+    );
+}
+
+
+//======================================================
 // OPEN REGISTER
-//------------------------------------------------------
+//======================================================
 
-function openRegister() {
+async function openRegister() {
     if (getActiveRegister()) {
-        alert("Register is already open.");
+        alert(
+            "Register is already open."
+        );
+
         return;
     }
 
-    const openingCash = Number(document.getElementById("opening-cash").value);
-    const cashier = document.getElementById("register-cashier").value.trim();
+    const openingCashInput =
+        document.getElementById(
+            "opening-cash"
+        );
 
-    if (isNaN(openingCash) || openingCash < 0) {
-        alert("Enter valid opening cash.");
+    const cashierInput =
+        document.getElementById(
+            "register-cashier"
+        );
+
+    const openingCash =
+        Number(
+            openingCashInput
+                ? openingCashInput.value
+                : 0
+        );
+
+    if (
+        Number.isNaN(openingCash) ||
+        openingCash < 0
+    ) {
+        alert(
+            "Enter valid opening cash."
+        );
+
         return;
     }
+
+
+    //--------------------------------------------------
+    // CURRENT LOGGED-IN USER
+    //--------------------------------------------------
+
+    const currentUser =
+        getRegisterUser();
+
+    const typedCashier =
+        cashierInput
+            ? cashierInput.value.trim()
+            : "";
 
     const register = {
-        id: generateId("REG-"),
-        cashier: cashier || "Admin",
+        id:
+            typeof generateId ===
+            "function"
+                ? generateId("REG-")
+                : `REG-${Date.now()}`,
+
+        cashierId:
+            currentUser.id,
+
+        cashier:
+            typedCashier ||
+            currentUser.name ||
+            "Admin",
+
         openingCash,
-        openedAt: new Date().toISOString(),
-        status: "Open"
+
+        openedAt:
+            new Date()
+                .toISOString(),
+
+        cashSales:
+            0,
+
+        expectedCash:
+            openingCash,
+
+        actualCash:
+            null,
+
+        difference:
+            null,
+
+        notes:
+            "",
+
+        closedAt:
+            null,
+
+        status:
+            "Open"
     };
 
-    saveActiveRegister(register);
 
-    document.getElementById("open-register-form").reset();
+    //--------------------------------------------------
+    // SAVE LOCALLY FIRST
+    //--------------------------------------------------
+
+    saveActiveRegister(
+        register
+    );
 
     renderRegisterDashboard();
     renderRegisterHistory();
 
-    alert("Register opened.");
+
+    //--------------------------------------------------
+    // SAVE ONLINE
+    //--------------------------------------------------
+
+    if (
+        typeof openRegisterInSupabase ===
+        "function"
+    ) {
+        try {
+            const cloudRegister =
+                await openRegisterInSupabase(
+                    register
+                );
+
+            if (cloudRegister) {
+                saveActiveRegister(
+                    cloudRegister
+                );
+
+                renderRegisterDashboard();
+                renderRegisterHistory();
+
+                console.log(
+                    "Register opened locally and online."
+                );
+            }
+
+        } catch (error) {
+            console.error(
+                "Could not open register online:",
+                error
+            );
+
+            alert(
+                "Register opened on this device but was not saved online."
+            );
+        }
+    }
+
+
+    const form =
+        document.getElementById(
+            "open-register-form"
+        );
+
+    if (form) {
+        form.reset();
+    }
+
+    alert(
+        "Register opened."
+    );
 }
 
-//------------------------------------------------------
-// CLOSE REGISTER
-//------------------------------------------------------
 
-function closeRegister() {
-    const active = getActiveRegister();
+//======================================================
+// CLOSE REGISTER
+//======================================================
+
+async function closeRegister() {
+    const active =
+        getActiveRegister();
 
     if (!active) {
-        alert("No active register.");
+        alert(
+            "No active register."
+        );
+
         return;
     }
 
-    const actualCash = Number(document.getElementById("actual-cash").value);
-    const notes = document.getElementById("register-notes").value.trim();
+    const actualCashInput =
+        document.getElementById(
+            "actual-cash"
+        );
 
-    if (isNaN(actualCash) || actualCash < 0) {
-        alert("Enter valid actual cash.");
+    const notesInput =
+        document.getElementById(
+            "register-notes"
+        );
+
+    const actualCash =
+        Number(
+            actualCashInput
+                ? actualCashInput.value
+                : NaN
+        );
+
+    const notes =
+        notesInput
+            ? notesInput.value.trim()
+            : "";
+
+    if (
+        Number.isNaN(actualCash) ||
+        actualCash < 0
+    ) {
+        alert(
+            "Enter valid actual cash."
+        );
+
         return;
     }
 
-    const closedAt = new Date().toISOString();
 
-    const cashSales = getRegisterCashSales(
-        active.openedAt,
-        closedAt
-    );
+    const closedAt =
+        new Date()
+            .toISOString();
 
-    const expectedCash = Number(active.openingCash || 0) + cashSales;
 
-    const difference = actualCash - expectedCash;
+    const cashSales =
+        getRegisterCashSales(
+            active.openedAt,
+            closedAt
+        );
+
+
+    const expectedCash =
+        Number(
+            active.openingCash ||
+            0
+        ) +
+        cashSales;
+
+
+    const difference =
+        actualCash -
+        expectedCash;
+
 
     const closedRegister = {
         ...active,
+
         cashSales,
+
         expectedCash,
+
         actualCash,
+
         difference,
+
         notes,
+
         closedAt,
-        status: "Closed"
+
+        status:
+            "Closed"
     };
 
-    const registers = getRegisters();
 
-    registers.unshift(closedRegister);
+    //--------------------------------------------------
+    // SAVE LOCALLY
+    //--------------------------------------------------
 
-    saveRegisters(registers);
+    const registers =
+        getRegisters();
+
+    registers.unshift(
+        closedRegister
+    );
+
+    saveRegisters(
+        registers
+    );
 
     clearActiveRegister();
-
-    document.getElementById("close-register-form").reset();
 
     renderRegisterDashboard();
     renderRegisterHistory();
 
-    alert("Register closed.");
+
+    //--------------------------------------------------
+    // UPDATE ONLINE
+    //--------------------------------------------------
+
+    if (
+        typeof closeRegisterInSupabase ===
+        "function"
+    ) {
+        try {
+            await closeRegisterInSupabase(
+                closedRegister
+            );
+
+            console.log(
+                "Register closed locally and online."
+            );
+
+        } catch (error) {
+            console.error(
+                "Could not close register online:",
+                error
+            );
+
+            alert(
+                "Register closed on this device but was not updated online."
+            );
+        }
+    }
+
+
+    const form =
+        document.getElementById(
+            "close-register-form"
+        );
+
+    if (form) {
+        form.reset();
+    }
+
+
+    alert(
+        "Register closed."
+    );
 }
 
-//------------------------------------------------------
-// DASHBOARD
-//------------------------------------------------------
+
+//======================================================
+// REGISTER DASHBOARD
+//======================================================
 
 function renderRegisterDashboard() {
-    const active = getActiveRegister();
+    const active =
+        getActiveRegister();
 
-    const opening = active ? Number(active.openingCash || 0) : 0;
+    const openingCash =
+        active
+            ? Number(
+                active.openingCash ||
+                0
+            )
+            : 0;
 
-    const cashSales = (loadState().sales || []).reduce((sum, sale) => {
-        return sum + Number(sale.total || 0);
-    }, 0);
 
-    const expected = opening + cashSales;
+    const cashSales =
+        active
+            ? getRegisterCashSales(
+                active.openedAt
+            )
+            : 0;
 
-    const openingEl = document.getElementById("register-opening");
-    const salesEl = document.getElementById("register-sales");
-    const expectedEl = document.getElementById("register-expected");
-    const differenceEl = document.getElementById("register-difference");
 
-    if (openingEl) openingEl.textContent = formatCurrency(opening);
-    if (salesEl) salesEl.textContent = formatCurrency(cashSales);
-    if (expectedEl) expectedEl.textContent = formatCurrency(expected);
-    if (differenceEl) differenceEl.textContent = formatCurrency(0);
+    const expectedCash =
+        openingCash +
+        cashSales;
+
+
+    const openingElement =
+        document.getElementById(
+            "register-opening"
+        );
+
+    const salesElement =
+        document.getElementById(
+            "register-sales"
+        );
+
+    const expectedElement =
+        document.getElementById(
+            "register-expected"
+        );
+
+    const differenceElement =
+        document.getElementById(
+            "register-difference"
+        );
+
+
+    if (openingElement) {
+        openingElement.textContent =
+            formatCurrency(
+                openingCash
+            );
+    }
+
+
+    if (salesElement) {
+        salesElement.textContent =
+            formatCurrency(
+                cashSales
+            );
+    }
+
+
+    if (expectedElement) {
+        expectedElement.textContent =
+            formatCurrency(
+                expectedCash
+            );
+    }
+
+
+    if (differenceElement) {
+        differenceElement.textContent =
+            formatCurrency(0);
+    }
 }
 
-//------------------------------------------------------
-// HISTORY
-//------------------------------------------------------
+
+//======================================================
+// REGISTER HISTORY
+//======================================================
 
 function renderRegisterHistory() {
-    const list = document.getElementById("register-history");
+    const list =
+        document.getElementById(
+            "register-history"
+        );
 
-    if (!list) return;
+    if (!list) {
+        return;
+    }
 
-    const registers = getRegisters();
-    const active = getActiveRegister();
 
-    const allRegisters = active
-        ? [active, ...registers]
-        : registers;
+    const registers =
+        getRegisters();
+
+
+    const active =
+        getActiveRegister();
+
+
+    const allRegisters =
+        active
+            ? [
+                active,
+                ...registers
+            ]
+            : registers;
+
 
     if (!allRegisters.length) {
         list.innerHTML = `
             <tr>
+
                 <td colspan="8">
+
                     <div class="empty-state">
+
                         No register history.
+
                     </div>
+
                 </td>
+
             </tr>
         `;
+
         return;
     }
 
-    list.innerHTML = allRegisters.map(register => {
-        const isOpen = register.status === "Open";
 
-        const cashSales = isOpen
-            ? getRegisterCashSales(register.openedAt)
-            : Number(register.cashSales || 0);
+    list.innerHTML =
+        allRegisters
+            .map(register => {
 
-        const expectedCash = isOpen
-            ? Number(register.openingCash || 0) + cashSales
-            : Number(register.expectedCash || 0);
+                const isOpen =
+                    register.status ===
+                    "Open";
 
-        return `
-            <tr>
-                <td>${formatDate(register.openedAt)}</td>
-                <td>${register.cashier || "-"}</td>
-                <td>${formatCurrency(register.openingCash || 0)}</td>
-                <td>${formatCurrency(cashSales)}</td>
-                <td>${formatCurrency(expectedCash)}</td>
-                <td>${isOpen ? "-" : formatCurrency(register.actualCash || 0)}</td>
-                <td>${isOpen ? "-" : formatCurrency(register.difference || 0)}</td>
-                <td>${register.status}</td>
-            </tr>
-        `;
-    }).join("");
+
+                const cashSales =
+                    isOpen
+
+                        ? getRegisterCashSales(
+                            register.openedAt
+                        )
+
+                        : Number(
+                            register.cashSales ||
+                            0
+                        );
+
+
+                const expectedCash =
+                    isOpen
+
+                        ? Number(
+                            register.openingCash ||
+                            0
+                        ) +
+                        cashSales
+
+                        : Number(
+                            register.expectedCash ||
+                            0
+                        );
+
+
+                return `
+                    <tr>
+
+                        <td>
+                            ${
+                                formatDate(
+                                    register.openedAt
+                                )
+                            }
+                        </td>
+
+                        <td>
+                            ${
+                                register.cashier ||
+                                "-"
+                            }
+                        </td>
+
+                        <td>
+                            ${
+                                formatCurrency(
+                                    register.openingCash ||
+                                    0
+                                )
+                            }
+                        </td>
+
+                        <td>
+                            ${
+                                formatCurrency(
+                                    cashSales
+                                )
+                            }
+                        </td>
+
+                        <td>
+                            ${
+                                formatCurrency(
+                                    expectedCash
+                                )
+                            }
+                        </td>
+
+                        <td>
+                            ${
+                                isOpen
+
+                                    ? "-"
+
+                                    : formatCurrency(
+                                        register.actualCash ||
+                                        0
+                                    )
+                            }
+                        </td>
+
+                        <td>
+                            ${
+                                isOpen
+
+                                    ? "-"
+
+                                    : formatCurrency(
+                                        register.difference ||
+                                        0
+                                    )
+                            }
+                        </td>
+
+                        <td>
+                            ${
+                                register.status
+                            }
+                        </td>
+
+                    </tr>
+                `;
+
+            })
+            .join("");
 }
 
-//------------------------------------------------------
-// INITIALIZE
-//------------------------------------------------------
+
+//======================================================
+// INITIALIZE REGISTER
+//======================================================
 
 function initializeRegisterModule() {
     renderRegisterDashboard();
+
     renderRegisterHistory();
 
-    const openForm = document.getElementById("open-register-form");
 
-    if (openForm && !openForm.dataset.ready) {
-        openForm.dataset.ready = "true";
+    const openForm =
+        document.getElementById(
+            "open-register-form"
+        );
 
-        openForm.addEventListener("submit", e => {
-            e.preventDefault();
-            openRegister();
-        });
+
+    if (
+        openForm &&
+        !openForm.dataset.ready
+    ) {
+        openForm.dataset.ready =
+            "true";
+
+
+        openForm.addEventListener(
+            "submit",
+            event => {
+
+                event.preventDefault();
+
+                openRegister();
+
+            }
+        );
     }
 
-    const closeForm = document.getElementById("close-register-form");
 
-    if (closeForm && !closeForm.dataset.ready) {
-        closeForm.dataset.ready = "true";
+    const closeForm =
+        document.getElementById(
+            "close-register-form"
+        );
 
-        closeForm.addEventListener("submit", e => {
-            e.preventDefault();
-            closeRegister();
-        });
+
+    if (
+        closeForm &&
+        !closeForm.dataset.ready
+    ) {
+        closeForm.dataset.ready =
+            "true";
+
+
+        closeForm.addEventListener(
+            "submit",
+            event => {
+
+                event.preventDefault();
+
+                closeRegister();
+
+            }
+        );
     }
 }
 
-document.addEventListener("DOMContentLoaded", initializeRegisterModule);
+
+//======================================================
+// AUTO START
+//======================================================
+
+document.addEventListener(
+    "DOMContentLoaded",
+    initializeRegisterModule
+);

@@ -6,16 +6,18 @@
 const CUSTOMER_KEY = "tys-pos-customers";
 const CREDIT_KEY = "tys-pos-credit-sales";
 
-//------------------------------------------------------
-// STORAGE
-//------------------------------------------------------
+
+//======================================================
+// LOCAL STORAGE
+//======================================================
 
 function getCustomers() {
     try {
         return JSON.parse(
             localStorage.getItem(CUSTOMER_KEY)
         ) || [];
-    } catch {
+    } catch (error) {
+        console.error("Could not load customers:", error);
         return [];
     }
 }
@@ -23,7 +25,7 @@ function getCustomers() {
 function saveCustomers(customers) {
     localStorage.setItem(
         CUSTOMER_KEY,
-        JSON.stringify(customers)
+        JSON.stringify(customers || [])
     );
 }
 
@@ -32,7 +34,8 @@ function getCreditSales() {
         return JSON.parse(
             localStorage.getItem(CREDIT_KEY)
         ) || [];
-    } catch {
+    } catch (error) {
+        console.error("Could not load credit sales:", error);
         return [];
     }
 }
@@ -40,42 +43,65 @@ function getCreditSales() {
 function saveCreditSales(credits) {
     localStorage.setItem(
         CREDIT_KEY,
-        JSON.stringify(credits)
+        JSON.stringify(credits || [])
     );
 }
 
-//------------------------------------------------------
-// SAVE CUSTOMER
-//------------------------------------------------------
 
-function saveCustomer() {
-    const nameInput = document.getElementById("customer-name");
-    const phoneInput = document.getElementById("customer-phone");
-    const notesInput = document.getElementById("customer-notes");
+//======================================================
+// SAVE CUSTOMER
+//======================================================
+
+async function saveCustomer() {
+    const nameInput =
+        document.getElementById("customer-name");
+
+    const phoneInput =
+        document.getElementById("customer-phone");
+
+    const notesInput =
+        document.getElementById("customer-notes");
 
     if (!nameInput) {
         alert("Customer form not found.");
         return;
     }
 
-    const name = nameInput.value.trim();
-    const phone = phoneInput ? phoneInput.value.trim() : "";
-    const notes = notesInput ? notesInput.value.trim() : "";
+    const name =
+        nameInput.value.trim();
+
+    const phone =
+        phoneInput
+            ? phoneInput.value.trim()
+            : "";
+
+    const notes =
+        notesInput
+            ? notesInput.value.trim()
+            : "";
 
     if (!name) {
         alert("Customer name is required.");
         return;
     }
 
-    const customers = getCustomers();
+    const localCustomer = {
+        id:
+            typeof generateId === "function"
+                ? generateId("CUS-")
+                : `CUS-${Date.now()}`,
 
-    customers.unshift({
-        id: generateId("CUS-"),
         name,
         phone,
         notes,
-        createdAt: new Date().toISOString()
-    });
+        createdAt:
+            new Date().toISOString()
+    };
+
+    let customers =
+        getCustomers();
+
+    customers.unshift(localCustomer);
 
     saveCustomers(customers);
 
@@ -83,23 +109,65 @@ function saveCustomer() {
     populateCustomerDropdown();
     updateCustomerSummary();
 
-    document.getElementById("customer-form").reset();
+    const form =
+        document.getElementById("customer-form");
+
+    if (form) {
+        form.reset();
+    }
+
+    if (
+        typeof saveCustomerToSupabase ===
+        "function"
+    ) {
+        try {
+            const cloudCustomer =
+                await saveCustomerToSupabase(
+                    localCustomer
+                );
+
+            if (cloudCustomer) {
+                console.log(
+                    "Customer saved locally and online."
+                );
+
+                if (
+                    typeof syncCloudCustomersToPOS ===
+                    "function"
+                ) {
+                    await syncCloudCustomersToPOS();
+                }
+            }
+        } catch (error) {
+            console.error(
+                "Cloud customer save failed:",
+                error
+            );
+
+            alert(
+                "Customer was saved on this device but not online."
+            );
+        }
+    }
 
     alert("Customer saved.");
 }
 
-//------------------------------------------------------
+
+//======================================================
 // CUSTOMER DROPDOWN
-//------------------------------------------------------
+//======================================================
 
 function populateCustomerDropdown() {
-    const select = document.getElementById(
-        "credit-customer"
-    );
+    const select =
+        document.getElementById(
+            "credit-customer"
+        );
 
     if (!select) return;
 
-    const customers = getCustomers();
+    const customers =
+        getCustomers();
 
     select.innerHTML = `
         <option value="">
@@ -107,53 +175,75 @@ function populateCustomerDropdown() {
         </option>
     `;
 
-    customers.forEach(customer => {
-        const option = document.createElement(
-            "option"
-        );
+    customers
+        .slice()
+        .sort((a, b) =>
+            String(a.name || "")
+                .localeCompare(
+                    String(b.name || "")
+                )
+        )
+        .forEach(customer => {
+            const option =
+                document.createElement(
+                    "option"
+                );
 
-        option.value = customer.id;
+            option.value =
+                customer.id;
 
-        option.textContent = customer.name;
+            option.textContent =
+                customer.name ||
+                "Unnamed Customer";
 
-        select.appendChild(option);
-    });
+            select.appendChild(option);
+        });
 }
 
-//------------------------------------------------------
+
+//======================================================
 // RENDER CUSTOMERS
-//------------------------------------------------------
+//======================================================
 
 function renderCustomers(search = "") {
-    const list = document.getElementById(
-        "customer-list"
-    );
+    const list =
+        document.getElementById(
+            "customer-list"
+        );
 
     if (!list) return;
 
-    const keyword = search
-        .trim()
-        .toLowerCase();
+    const keyword =
+        String(search || "")
+            .trim()
+            .toLowerCase();
 
-    const customers = getCustomers();
+    const customers =
+        getCustomers();
 
-    const filtered = customers.filter(
-        customer => {
+    const filtered =
+        customers.filter(customer => {
+            const name =
+                String(
+                    customer.name || ""
+                ).toLowerCase();
+
+            const phone =
+                String(
+                    customer.phone || ""
+                ).toLowerCase();
+
+            const notes =
+                String(
+                    customer.notes || ""
+                ).toLowerCase();
+
             return (
-                customer.name
-                    .toLowerCase()
-                    .includes(keyword) ||
-
-                (customer.phone || "")
-                    .toLowerCase()
-                    .includes(keyword) ||
-
-                (customer.notes || "")
-                    .toLowerCase()
-                    .includes(keyword)
+                name.includes(keyword) ||
+                phone.includes(keyword) ||
+                notes.includes(keyword)
             );
-        }
-    );
+        });
 
     if (!filtered.length) {
         list.innerHTML = `
@@ -169,13 +259,12 @@ function renderCustomers(search = "") {
         return;
     }
 
-    list.innerHTML = filtered.map(
-        customer => `
+    list.innerHTML =
+        filtered.map(customer => `
             <tr>
-
                 <td>
                     <strong>
-                        ${customer.name}
+                        ${customer.name || "-"}
                     </strong>
                 </td>
 
@@ -188,62 +277,61 @@ function renderCustomers(search = "") {
                 </td>
 
                 <td>
-
                     <button
+                        type="button"
                         class="danger-btn delete-customer"
                         data-id="${customer.id}">
-
                         Delete
-
                     </button>
-
                 </td>
-
             </tr>
-        `
-    ).join("");
+        `).join("");
 
     document
         .querySelectorAll(
             ".delete-customer"
         )
         .forEach(button => {
-
             button.addEventListener(
                 "click",
                 () => {
-
                     deleteCustomer(
                         button.dataset.id
                     );
-
                 }
             );
-
         });
 }
 
-//------------------------------------------------------
+
+//======================================================
 // DELETE CUSTOMER
-//------------------------------------------------------
+//======================================================
 
-function deleteCustomer(id) {
-    let customers = getCustomers();
+async function deleteCustomer(id) {
+    let customers =
+        getCustomers();
 
-    const customer = customers.find(
-        item => item.id === id
-    );
+    const customer =
+        customers.find(
+            item =>
+                String(item.id) ===
+                String(id)
+        );
 
     if (!customer) return;
 
-    const customerCredits = getCreditSales()
-        .filter(
+    const outstandingCredits =
+        getCreditSales().filter(
             credit =>
-                credit.customerId === id &&
-                Number(credit.balance) > 0
+                String(credit.customerId) ===
+                String(id) &&
+                Number(
+                    credit.balance || 0
+                ) > 0
         );
 
-    if (customerCredits.length) {
+    if (outstandingCredits.length) {
         alert(
             "This customer still has an outstanding balance."
         );
@@ -259,52 +347,103 @@ function deleteCustomer(id) {
         return;
     }
 
-    customers = customers.filter(
-        item => item.id !== id
-    );
+    customers =
+        customers.filter(
+            item =>
+                String(item.id) !==
+                String(id)
+        );
 
     saveCustomers(customers);
 
     renderCustomers();
-
     populateCustomerDropdown();
-
     updateCustomerSummary();
+
+    if (
+        typeof deleteCustomerFromSupabase ===
+        "function"
+    ) {
+        try {
+            const success =
+                await deleteCustomerFromSupabase(
+                    id
+                );
+
+            if (
+                success &&
+                typeof syncCloudCustomersToPOS ===
+                "function"
+            ) {
+                await syncCloudCustomersToPOS();
+            }
+        } catch (error) {
+            console.error(
+                "Cloud customer deletion failed:",
+                error
+            );
+        }
+    }
 }
 
-//------------------------------------------------------
+
+//======================================================
 // SAVE CREDIT SALE
-//------------------------------------------------------
+//======================================================
 
-function saveCreditSale() {
-    const customerId = document
-        .getElementById(
+async function saveCreditSale() {
+    const customerSelect =
+        document.getElementById(
             "credit-customer"
-        )
-        .value;
+        );
 
-    const description = document
-        .getElementById(
+    const descriptionInput =
+        document.getElementById(
             "credit-description"
-        )
-        .value
-        .trim();
+        );
 
-    const amount = Number(
+    const amountInput =
         document.getElementById(
             "credit-amount"
-        ).value
-    );
+        );
 
-    const paid = Number(
+    const paidInput =
         document.getElementById(
             "credit-paid-amount"
-        ).value || 0
-    );
+        );
 
-    const dateInput = document.getElementById(
-        "credit-date"
-    );
+    const dateInput =
+        document.getElementById(
+            "credit-date"
+        );
+
+    const customerId =
+        customerSelect
+            ? customerSelect.value
+            : "";
+
+    const description =
+        descriptionInput
+            ? descriptionInput.value.trim()
+            : "";
+
+    const amount =
+        amountInput
+            ? Number(amountInput.value)
+            : 0;
+
+    const paid =
+        paidInput
+            ? Number(paidInput.value || 0)
+            : 0;
+
+    const date =
+        dateInput &&
+        dateInput.value
+            ? new Date(
+                `${dateInput.value}T12:00:00`
+            ).toISOString()
+            : new Date().toISOString();
 
     if (!customerId || amount <= 0) {
         alert(
@@ -314,7 +453,11 @@ function saveCreditSale() {
         return;
     }
 
-    if (paid < 0 || paid > amount) {
+    if (
+        !Number.isFinite(paid) ||
+        paid < 0 ||
+        paid > amount
+    ) {
         alert(
             "Amount paid cannot be more than the credit amount."
         );
@@ -322,26 +465,29 @@ function saveCreditSale() {
         return;
     }
 
-    const customer = getCustomers()
-        .find(
+    const customer =
+        getCustomers().find(
             item =>
-                item.id === customerId
+                String(item.id) ===
+                String(customerId)
         );
 
     if (!customer) {
-        alert(
-            "Customer not found."
-        );
-
+        alert("Customer not found.");
         return;
     }
 
-    const credits = getCreditSales();
+    const balance =
+        amount - paid;
 
-    credits.unshift({
-        id: generateId("CR-"),
+    const creditSale = {
+        id:
+            typeof generateId === "function"
+                ? generateId("CRD-")
+                : `CRD-${Date.now()}`,
 
-        customerId,
+        customerId:
+            customer.id,
 
         customerName:
             customer.name,
@@ -352,58 +498,92 @@ function saveCreditSale() {
 
         paid,
 
-        balance:
-            amount - paid,
+        balance,
 
-        date:
-            dateInput &&
-            dateInput.value
+        date
+    };
 
-                ? new Date(
-                    dateInput.value
-                ).toISOString()
+    const creditSales =
+        getCreditSales();
 
-                : new Date()
-                    .toISOString()
-    });
+    creditSales.unshift(
+        creditSale
+    );
 
-    saveCreditSales(credits);
+    saveCreditSales(
+        creditSales
+    );
 
     renderCreditSales();
-
     updateCustomerSummary();
 
-    document
-        .getElementById(
+    const form =
+        document.getElementById(
             "credit-form"
-        )
-        .reset();
+        );
+
+    if (form) {
+        form.reset();
+    }
+
+    if (
+        typeof saveCreditSaleToSupabase ===
+        "function"
+    ) {
+        try {
+            const result =
+                await saveCreditSaleToSupabase(
+                    creditSale
+                );
+
+            if (result) {
+                console.log(
+                    "Credit record saved locally and online."
+                );
+
+                if (
+                    typeof syncCloudCreditSalesToPOS ===
+                    "function"
+                ) {
+                    await syncCloudCreditSalesToPOS();
+                }
+            }
+        } catch (error) {
+            console.error(
+                "Cloud credit save failed:",
+                error
+            );
+
+            alert(
+                "Credit sale was saved on this device but not online."
+            );
+        }
+    }
 }
 
-//------------------------------------------------------
+
+//======================================================
 // RENDER CREDIT SALES
-//------------------------------------------------------
+//======================================================
 
 function renderCreditSales() {
-    const list = document.getElementById(
-        "credit-list"
-    );
+    const list =
+        document.getElementById(
+            "credit-list"
+        );
 
     if (!list) return;
 
-    const credits = getCreditSales();
+    const credits =
+        getCreditSales();
 
     if (!credits.length) {
         list.innerHTML = `
             <tr>
                 <td colspan="7">
-
                     <div class="empty-state">
-
                         No credit sales recorded.
-
                     </div>
-
                 </td>
             </tr>
         `;
@@ -411,18 +591,22 @@ function renderCreditSales() {
         return;
     }
 
-    list.innerHTML = credits.map(
-        credit => `
+    list.innerHTML =
+        credits.map(credit => `
             <tr>
-
                 <td>
-                    ${formatDate(
-                        credit.date
-                    )}
+                    ${
+                        typeof formatDate ===
+                        "function"
+                            ? formatDate(
+                                credit.date
+                            )
+                            : credit.date
+                    }
                 </td>
 
                 <td>
-                    ${credit.customerName}
+                    ${credit.customerName || "-"}
                 </td>
 
                 <td>
@@ -431,79 +615,67 @@ function renderCreditSales() {
 
                 <td>
                     ${formatCurrency(
-                        credit.amount
+                        credit.amount || 0
                     )}
                 </td>
 
                 <td>
                     ${formatCurrency(
-                        credit.paid
+                        credit.paid || 0
                     )}
                 </td>
 
                 <td>
                     <strong>
                         ${formatCurrency(
-                            credit.balance
+                            credit.balance || 0
                         )}
                     </strong>
                 </td>
 
                 <td>
-
                     ${
-                        credit.balance > 0
-
-                        ? `
-                            <button
-                                class="primary-btn record-payment"
-                                data-id="${credit.id}">
-
-                                Pay
-
-                            </button>
-                        `
-
-                        : `
-                            <span class="status-badge">
-
-                                Paid
-
-                            </span>
-                        `
+                        Number(
+                            credit.balance || 0
+                        ) > 0
+                            ? `
+                                <button
+                                    type="button"
+                                    class="primary-btn record-payment"
+                                    data-id="${credit.id}">
+                                    Pay
+                                </button>
+                            `
+                            : `
+                                <span class="status-badge">
+                                    Paid
+                                </span>
+                            `
                     }
 
                     <button
+                        type="button"
                         class="danger-btn delete-credit"
                         data-id="${credit.id}">
-
                         Delete
-
                     </button>
-
                 </td>
-
             </tr>
-        `
-    ).join("");
+        `).join("");
 
     document
         .querySelectorAll(
             ".record-payment"
         )
         .forEach(button => {
-
             button.addEventListener(
                 "click",
                 () => {
-
                     recordCreditPayment(
                         button.dataset.id
                     );
-
                 }
             );
-
         });
 
     document
@@ -511,44 +683,46 @@ function renderCreditSales() {
             ".delete-credit"
         )
         .forEach(button => {
-
             button.addEventListener(
                 "click",
                 () => {
-
                     deleteCreditSale(
                         button.dataset.id
                     );
-
                 }
             );
-
         });
 }
 
-//------------------------------------------------------
-// RECORD PAYMENT
-//------------------------------------------------------
 
-function recordCreditPayment(id) {
-    const credits = getCreditSales();
+//======================================================
+// RECORD CREDIT PAYMENT
+//======================================================
 
-    const credit = credits.find(
-        item => item.id === id
-    );
+async function recordCreditPayment(id) {
+    const credits =
+        getCreditSales();
+
+    const credit =
+        credits.find(
+            item =>
+                String(item.id) ===
+                String(id)
+        );
 
     if (!credit) return;
 
-    const payment = Number(
-        prompt(
-            `Outstanding balance: ${formatCurrency(
-                credit.balance
-            )}\n\nEnter payment amount:`
-        )
-    );
+    const payment =
+        Number(
+            prompt(
+                `Outstanding balance: ${formatCurrency(
+                    credit.balance
+                )}\n\nEnter payment amount:`
+            )
+        );
 
     if (
-        !payment ||
+        !Number.isFinite(payment) ||
         payment <= 0
     ) {
         return;
@@ -556,7 +730,9 @@ function recordCreditPayment(id) {
 
     if (
         payment >
-        Number(credit.balance)
+        Number(
+            credit.balance || 0
+        )
     ) {
         alert(
             "Payment is more than the outstanding balance."
@@ -571,30 +747,64 @@ function recordCreditPayment(id) {
         ) + payment;
 
     credit.balance =
-        Number(
-            credit.amount
-        ) -
-        credit.paid;
+        Math.max(
+            0,
+            Number(
+                credit.amount || 0
+            ) -
+            Number(
+                credit.paid || 0
+            )
+        );
 
     saveCreditSales(
         credits
     );
 
     renderCreditSales();
-
     updateCustomerSummary();
+
+    if (
+        typeof updateCreditSaleInSupabase ===
+        "function"
+    ) {
+        try {
+            const success =
+                await updateCreditSaleInSupabase(
+                    credit
+                );
+
+            if (
+                success &&
+                typeof syncCloudCreditSalesToPOS ===
+                "function"
+            ) {
+                await syncCloudCreditSalesToPOS();
+            }
+        } catch (error) {
+            console.error(
+                "Cloud credit payment update failed:",
+                error
+            );
+        }
+    }
 }
 
-//------------------------------------------------------
-// DELETE CREDIT
-//------------------------------------------------------
 
-function deleteCreditSale(id) {
-    let credits = getCreditSales();
+//======================================================
+// DELETE CREDIT SALE
+//======================================================
 
-    const credit = credits.find(
-        item => item.id === id
-    );
+async function deleteCreditSale(id) {
+    let credits =
+        getCreditSales();
+
+    const credit =
+        credits.find(
+            item =>
+                String(item.id) ===
+                String(id)
+        );
 
     if (!credit) return;
 
@@ -606,22 +816,50 @@ function deleteCreditSale(id) {
         return;
     }
 
-    credits = credits.filter(
-        item => item.id !== id
-    );
+    credits =
+        credits.filter(
+            item =>
+                String(item.id) !==
+                String(id)
+        );
 
     saveCreditSales(
         credits
     );
 
     renderCreditSales();
-
     updateCustomerSummary();
+
+    if (
+        typeof deleteCreditSaleFromSupabase ===
+        "function"
+    ) {
+        try {
+            const success =
+                await deleteCreditSaleFromSupabase(
+                    id
+                );
+
+            if (
+                success &&
+                typeof syncCloudCreditSalesToPOS ===
+                "function"
+            ) {
+                await syncCloudCreditSalesToPOS();
+            }
+        } catch (error) {
+            console.error(
+                "Cloud credit deletion failed:",
+                error
+            );
+        }
+    }
 }
 
-//------------------------------------------------------
-// SUMMARY
-//------------------------------------------------------
+
+//======================================================
+// CUSTOMER SUMMARY
+//======================================================
 
 function updateCustomerSummary() {
     const customers =
@@ -660,36 +898,51 @@ function updateCustomerSummary() {
             0
         );
 
-    document.getElementById(
-        "customer-count"
-    ).textContent =
-        customers.length;
-
-    document.getElementById(
-        "credit-total"
-    ).textContent =
-        formatCurrency(
-            totalCredit
+    const countEl =
+        document.getElementById(
+            "customer-count"
         );
 
-    document.getElementById(
-        "credit-paid"
-    ).textContent =
-        formatCurrency(
-            totalPaid
+    const totalEl =
+        document.getElementById(
+            "credit-total"
         );
 
-    document.getElementById(
-        "credit-balance"
-    ).textContent =
-        formatCurrency(
-            totalBalance
+    const paidEl =
+        document.getElementById(
+            "credit-paid"
         );
+
+    const balanceEl =
+        document.getElementById(
+            "credit-balance"
+        );
+
+    if (countEl) {
+        countEl.textContent =
+            customers.length;
+    }
+
+    if (totalEl) {
+        totalEl.textContent =
+            formatCurrency(totalCredit);
+    }
+
+    if (paidEl) {
+        paidEl.textContent =
+            formatCurrency(totalPaid);
+    }
+
+    if (balanceEl) {
+        balanceEl.textContent =
+            formatCurrency(totalBalance);
+    }
 }
 
-//------------------------------------------------------
+
+//======================================================
 // SEARCH
-//------------------------------------------------------
+//======================================================
 
 function initializeCustomerSearch() {
     const search =
@@ -699,105 +952,99 @@ function initializeCustomerSearch() {
 
     if (!search) return;
 
-    search.addEventListener(
-        "input",
-        () => {
+    if (!search.dataset.ready) {
+        search.dataset.ready = "true";
 
-            renderCustomers(
-                search.value
-            );
-
-        }
-    );
+        search.addEventListener(
+            "input",
+            () => {
+                renderCustomers(
+                    search.value
+                );
+            }
+        );
+    }
 
     const clear =
         document.getElementById(
             "clear-customer-search"
         );
 
-    if (clear) {
+    if (
+        clear &&
+        !clear.dataset.ready
+    ) {
+        clear.dataset.ready = "true";
 
         clear.addEventListener(
             "click",
             () => {
-
                 search.value = "";
-
                 renderCustomers();
-
             }
         );
-
     }
 }
 
-//------------------------------------------------------
+
+//======================================================
 // INITIALIZE
-//------------------------------------------------------
+//======================================================
 
 function initializeCustomersModule() {
-
     renderCustomers();
-
     populateCustomerDropdown();
-
     renderCreditSales();
-
     updateCustomerSummary();
-
     initializeCustomerSearch();
 
     const customerForm =
-        document.getElementById("customer-form");
+        document.getElementById(
+            "customer-form"
+        );
 
     if (
         customerForm &&
         !customerForm.dataset.ready
     ) {
-
-        customerForm.dataset.ready = "true";
+        customerForm.dataset.ready =
+            "true";
 
         customerForm.addEventListener(
             "submit",
             event => {
-
                 event.preventDefault();
-
                 saveCustomer();
-
             }
         );
-
     }
 
     const creditForm =
-        document.getElementById("credit-form");
+        document.getElementById(
+            "credit-form"
+        );
 
     if (
         creditForm &&
         !creditForm.dataset.ready
     ) {
-
-        creditForm.dataset.ready = "true";
+        creditForm.dataset.ready =
+            "true";
 
         creditForm.addEventListener(
             "submit",
             event => {
-
                 event.preventDefault();
-
                 saveCreditSale();
-
             }
         );
-
     }
-
 }
 
-//------------------------------------------------------
-// START CUSTOMERS MODULE
-//------------------------------------------------------
+
+//======================================================
+// AUTO START
+//======================================================
 
 document.addEventListener(
     "DOMContentLoaded",

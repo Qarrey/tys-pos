@@ -17,7 +17,7 @@
 
 </head>
 
-<body>
+<body data-admin-page>
 
 <div class="app-shell">
 
@@ -225,29 +225,34 @@
 </div>
 
 
-<!-- SCRIPTS -->
-
-<script src="inventory-seed.js"></script>
-
-<script src="js/database.js"></script>
-
-<script src="js/utils.js"></script>
-
-<script src="js/stock.js"></script>
-
-<script src="js/stocktake.js"></script>
-<script src="js/navigation.js"></script>
+<!-- SUPABASE LIBRARY -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<!-- SUPABASE CONNECTION -->
 <script src="js/supabase-config.js"></script>
 
+<!-- LOGIN AND USER SESSION -->
 <script src="js/auth-guard.js"></script>
-
 <script src="js/user-session.js"></script>
-
+<script src="js/admin-ui-guard.js"></script>
 <script src="js/role-guard.js"></script>
 
+<!-- LOCAL POS DATA -->
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
 
+<!-- CLOUD PRODUCTS -->
+<script src="js/cloud-products.js"></script>
+
+<!-- DEDICATED STOCKTAKE CLOUD FILE -->
+<script src="js/cloud-stocktake.js"></script>
+
+<!-- STOCKTAKE PAGE -->
+<script src="js/stocktake.js"></script>
+
+<!-- NAVIGATION LAST -->
+<script src="js/navigation.js"></script>
 </body>
 
 </html>

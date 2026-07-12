@@ -1,34 +1,41 @@
 //======================================================
 // TYS POS
-// ROLE GUARD
+// PAGE ROLE GUARD
 //======================================================
 
 async function protectByRole() {
-    if (typeof loadCurrentPOSUser === "function") {
-        await loadCurrentPOSUser();
-    }
-
     const currentPage =
         window.location.pathname.split("/").pop() || "index.html";
 
-    const cashierAllowedPages = [
+    const cashierAllowedPages = new Set([
         "index.html",
         "purchases.html",
-        "login.html"
-    ];
+        "register.html",
+        "login.html",
+        ""
+    ]);
 
-    const role =
-        currentPOSUser && currentPOSUser.role
-            ? currentPOSUser.role
-            : "cashier";
+    const profile = typeof loadCurrentPOSUser === "function"
+        ? await loadCurrentPOSUser()
+        : null;
 
-    if (
-        role === "cashier" &&
-        !cashierAllowedPages.includes(currentPage)
-    ) {
-        alert("You do not have permission to access this page.");
-        window.location.href = "index.html";
+    if (!profile || profile.confirmed !== true || profile.status !== "active") {
+        if (currentPage !== "login.html") {
+            window.location.replace("login.html");
+        }
+        return false;
     }
+
+    const pageMarkedAdmin = document.body?.hasAttribute("data-admin-page");
+    const confirmedAdmin = window.isConfirmedAdmin === true;
+
+    if ((pageMarkedAdmin || !cashierAllowedPages.has(currentPage)) && !confirmedAdmin) {
+        window.location.replace("index.html");
+        return false;
+    }
+
+    document.documentElement.classList.add("page-access-confirmed");
+    return true;
 }
 
-document.addEventListener("DOMContentLoaded", protectByRole);
+document.addEventListener("DOMContentLoaded", protectByRole, { once: true });

@@ -261,50 +261,19 @@
 
             <div
     id="sale-date-section"
-    class="inventory-card">
+    class="inventory-card"
+    data-admin-only
+    hidden>
 
     <div class="field">
-
-        <label for="sale-date">
-            Sale Date and Time
-        </label>
-
-        <input
-            id="sale-date"
-            type="datetime-local">
-
-        <div class="small">
-            Leave as the current date for normal sales.
-        </div>
-
+        <label for="sale-date">Sale Date and Time</label>
+        <input id="sale-date" type="datetime-local" disabled>
+        <small>Admin only. Leave as the current date for normal sales.</small>
     </div>
 
 </div>
 
-            <!-- CHECKOUT -->
-             <!-- ==================================================
-SALE DATE
-=================================================== -->
 
-<div class="inventory-card">
-
-    <div class="field">
-
-        <label for="sale-date">
-            Sale Date and Time
-        </label>
-
-        <input
-            id="sale-date"
-            type="datetime-local">
-
-        <small>
-            Leave blank for today's sale. Select an earlier date only when entering a previous sale.
-        </small>
-
-    </div>
-
-</div>
              <!-- PAYMENT METHOD -->
 
 <div class="inventory-card">
@@ -541,6 +510,7 @@ SUPABASE AND SECURITY
 <script src="js/auth-guard.js"></script>
 
 <script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
 
 <script src="js/role-guard.js"></script>
 

@@ -30,18 +30,41 @@ function saveSupplier() {
 
     const supplierList = getSuppliers();
 
-    supplierList.unshift({
-        id: generateId("SUP-"),
-        name,
-        contact,
-        phone,
-        email,
-        address,
-        createdAt: new Date().toISOString()
-    });
+    const supplier = {
+    id: generateId("SUP-"),
+    name,
+    contact,
+    phone,
+    email,
+    address,
+    createdAt: new Date().toISOString()
+};
 
-    saveSuppliers(supplierList);
+supplierList.unshift(supplier);
 
+saveSuppliers(supplierList);
+
+
+// SAVE TO SUPABASE
+
+if (
+    typeof saveSupplierToSupabase === "function"
+) {
+    saveSupplierToSupabase(supplier)
+        .then(result => {
+            if (result) {
+                console.log(
+                    "Supplier saved locally and online."
+                );
+            }
+        })
+        .catch(error => {
+            console.error(
+                "Cloud supplier save failed:",
+                error
+            );
+        });
+}
     renderSuppliers();
 
     if (typeof populateSupplierDropdown === "function") {
@@ -200,7 +223,26 @@ function deleteSupplier(supplierId) {
 
     saveSuppliers(suppliers);
 
-    renderSuppliers();
+
+saveSuppliers(suppliers);
+
+
+// DELETE FROM SUPABASE
+
+if (
+    typeof deleteSupplierFromSupabase === "function"
+) {
+    deleteSupplierFromSupabase(supplierId)
+        .catch(error => {
+            console.error(
+                "Cloud supplier deletion failed:",
+                error
+            );
+        });
+}
+
+
+renderSuppliers();
 
     if (typeof populateSupplierDropdown === "function") {
         populateSupplierDropdown();

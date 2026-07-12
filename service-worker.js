@@ -1,4 +1,4 @@
-const CACHE_NAME = "tys-pos-cache-v1";
+const CACHE_NAME = "tys-pos-role-guard-v6";
 const ASSETS = [
   "./",
   "./index.html",

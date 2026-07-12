@@ -1,492 +1,486 @@
 //======================================================
 // TYS POS v3
 // STOCKTAKING MODULE
+// LOCAL + SUPABASE
 //======================================================
 
 let stocktakeCounts = {};
+let stocktakeSaving = false;
 
-//------------------------------------------------------
-// GET INVENTORY
-//------------------------------------------------------
+
+//======================================================
+// INVENTORY
+//======================================================
 
 function getStocktakeInventory() {
+    try {
+        const state =
+            typeof loadState === "function"
+                ? loadState()
+                : {};
 
-    const state = loadState();
+        return Array.isArray(state.inventory)
+            ? state.inventory
+            : [];
 
-    return state.inventory || [];
+    } catch (error) {
+        console.error(
+            "Could not load stocktake inventory:",
+            error
+        );
 
+        return [];
+    }
 }
 
-//------------------------------------------------------
+
+//======================================================
+// CURRENT USER
+//======================================================
+
+async function getStocktakeCurrentUser() {
+    try {
+        if (
+            typeof loadCurrentPOSUser ===
+            "function"
+        ) {
+            await loadCurrentPOSUser();
+        }
+    } catch (error) {
+        console.warn(
+            "Could not load the current POS user:",
+            error
+        );
+    }
+
+    return {
+        id:
+            window.currentPOSUser?.id ||
+            window.currentPOSUser?.userId ||
+            "",
+
+        name:
+            window.currentPOSUser?.fullName ||
+            window.currentPOSUser?.name ||
+            window.currentPOSUser?.email ||
+            "Admin"
+    };
+}
+
+
+//======================================================
 // RENDER STOCKTAKE
-//------------------------------------------------------
+//======================================================
 
 function renderStocktake(search = "") {
-
     const list =
-        document.getElementById("stocktake-list");
+        document.getElementById(
+            "stocktake-list"
+        );
 
     if (!list) return;
-
 
     const inventory =
         getStocktakeInventory();
 
-
     const keyword =
-        search.trim().toLowerCase();
-
+        String(search || "")
+            .trim()
+            .toLowerCase();
 
     const products =
         inventory.filter(product => {
+            const name =
+                String(
+                    product.name || ""
+                ).toLowerCase();
+
+            const sku =
+                String(
+                    product.sku || ""
+                ).toLowerCase();
+
+            const category =
+                String(
+                    product.category || ""
+                ).toLowerCase();
 
             return (
-
-                String(product.name || "")
-                    .toLowerCase()
-                    .includes(keyword)
-
-                ||
-
-                String(product.sku || "")
-                    .toLowerCase()
-                    .includes(keyword)
-
-                ||
-
-                String(product.category || "")
-                    .toLowerCase()
-                    .includes(keyword)
-
+                name.includes(keyword) ||
+                sku.includes(keyword) ||
+                category.includes(keyword)
             );
-
         });
 
-
     if (!products.length) {
-
         list.innerHTML = `
-
             <tr>
-
                 <td colspan="6">
-
                     <div class="empty-state">
-
                         No products found.
-
                     </div>
-
                 </td>
-
             </tr>
-
         `;
 
         return;
-
     }
-
 
     list.innerHTML =
         products.map(product => {
-
             const systemStock =
-                Number(product.stock || 0);
-
+                Number(
+                    product.stock || 0
+                );
 
             const physicalStock =
-
                 stocktakeCounts[
                     product.id
                 ];
 
-
             const difference =
-
                 physicalStock === undefined
-
                     ? 0
-
-                    : physicalStock -
+                    : Number(physicalStock) -
                       systemStock;
-
 
             let status =
                 "Not Counted";
-
 
             if (
                 physicalStock !==
                 undefined
             ) {
-
                 if (difference < 0) {
-
-                    status =
-                        "Shortage";
-
+                    status = "Shortage";
+                } else if (difference > 0) {
+                    status = "Extra Stock";
+                } else {
+                    status = "Correct";
                 }
-
-                else if (
-                    difference > 0
-                ) {
-
-                    status =
-                        "Extra Stock";
-
-                }
-
-                else {
-
-                    status =
-                        "Correct";
-
-                }
-
             }
 
-
             return `
-
                 <tr>
 
                     <td>
-
                         <strong>
-
-                            ${product.name}
-
+                            ${product.name || "-"}
                         </strong>
-
                     </td>
 
-
                     <td>
-
                         ${product.sku || "-"}
-
                     </td>
 
-
                     <td>
-
                         ${systemStock}
-
                     </td>
 
-
                     <td>
-
                         <input
-
                             type="number"
-
                             class="physical-stock-input"
-
                             data-id="${product.id}"
-
                             min="0"
-
                             step="0.01"
-
                             value="${
                                 physicalStock ??
                                 ""
                             }"
-
                             placeholder="Count">
-
                     </td>
 
-
                     <td>
-
                         ${difference}
-
                     </td>
 
-
                     <td>
-
                         ${status}
-
                     </td>
 
                 </tr>
-
             `;
-
         }).join("");
 
-
     initializeStockInputs();
-
 }
 
-//------------------------------------------------------
+
+//======================================================
 // PHYSICAL STOCK INPUTS
-//------------------------------------------------------
+//======================================================
 
 function initializeStockInputs() {
-
     document
         .querySelectorAll(
             ".physical-stock-input"
         )
         .forEach(input => {
+            if (
+                input.dataset.ready ===
+                "true"
+            ) {
+                return;
+            }
 
+            input.dataset.ready =
+                "true";
 
             input.addEventListener(
-
                 "input",
-
                 () => {
-
-
-                    const id =
+                    const productId =
                         input.dataset.id;
-
 
                     if (
                         input.value === ""
                     ) {
-
                         delete stocktakeCounts[
-                            id
+                            productId
                         ];
 
+                        updateStocktakeSummary();
+
+                        return;
                     }
 
-                    else {
+                    const value =
+                        Number(
+                            input.value
+                        );
 
-                        stocktakeCounts[
-                            id
-                        ] =
-
-                            Number(
-                                input.value
-                            );
-
+                    if (
+                        !Number.isFinite(value) ||
+                        value < 0
+                    ) {
+                        return;
                     }
 
+                    stocktakeCounts[
+                        productId
+                    ] = value;
 
                     updateStocktakeSummary();
-
                 }
-
             );
 
-
             input.addEventListener(
-
                 "change",
-
                 () => {
-
-
                     const search =
-
                         document
                             .getElementById(
                                 "stocktake-search"
                             )
                             ?.value || "";
 
-
                     renderStocktake(
                         search
                     );
-
                 }
-
             );
-
-
         });
-
 }
 
-//------------------------------------------------------
+
+//======================================================
 // SUMMARY
-//------------------------------------------------------
+//======================================================
 
-function updateStocktakeSummary() {
-
+function calculateStocktakeSummary() {
     const inventory =
         getStocktakeInventory();
 
-
     let counted = 0;
-
     let shortages = 0;
-
     let extra = 0;
 
-
     inventory.forEach(product => {
-
-
         const physical =
-
             stocktakeCounts[
                 product.id
             ];
 
-
         if (
             physical === undefined
         ) {
-
             return;
-
         }
-
 
         counted++;
 
-
         const difference =
-
-            physical -
-
+            Number(physical) -
             Number(
                 product.stock || 0
             );
 
-
         if (difference < 0) {
-
             shortages++;
-
         }
-
 
         if (difference > 0) {
-
             extra++;
-
         }
-
-
     });
 
-
-    document
-        .getElementById(
-            "stocktake-count"
-        )
-        .textContent =
-        counted;
-
-
-    document
-        .getElementById(
-            "stocktake-shortages"
-        )
-        .textContent =
-        shortages;
-
-
-    document
-        .getElementById(
-            "stocktake-extra"
-        )
-        .textContent =
-        extra;
-
+    return {
+        counted,
+        shortages,
+        extra
+    };
 }
 
-//------------------------------------------------------
-// SAVE STOCKTAKE
-//------------------------------------------------------
 
-function saveStocktake() {
+function updateStocktakeSummary() {
+    const summary =
+        calculateStocktakeSummary();
 
-    const state =
-        loadState();
+    const countElement =
+        document.getElementById(
+            "stocktake-count"
+        );
+
+    const shortageElement =
+        document.getElementById(
+            "stocktake-shortages"
+        );
+
+    const extraElement =
+        document.getElementById(
+            "stocktake-extra"
+        );
+
+    if (countElement) {
+        countElement.textContent =
+            summary.counted;
+    }
+
+    if (shortageElement) {
+        shortageElement.textContent =
+            summary.shortages;
+    }
+
+    if (extraElement) {
+        extraElement.textContent =
+            summary.extra;
+    }
+}
 
 
+//======================================================
+// BUILD STOCKTAKE RECORD
+//======================================================
+
+async function buildStocktakeRecord() {
     const inventory =
-        state.inventory || [];
+        getStocktakeInventory();
 
+    const user =
+        await getStocktakeCurrentUser();
 
-    const countedIds =
-
-        Object.keys(
-            stocktakeCounts
-        );
-
-
-    if (
-        !countedIds.length
-    ) {
-
-        alert(
-
-            "Enter at least one physical stock quantity."
-
-        );
-
-        return;
-
-    }
-
-
-    if (
-
-        !confirm(
-
-            "Save stocktake and update inventory quantities?"
-
-        )
-
-    ) {
-
-        return;
-
-    }
-
+    const items = [];
 
     inventory.forEach(product => {
-
-
-        const physical =
-
+        const physicalStock =
             stocktakeCounts[
                 product.id
             ];
 
-
         if (
-            physical === undefined
+            physicalStock === undefined
         ) {
-
             return;
-
         }
 
-
-        const oldStock =
-
+        const systemStock =
             Number(
                 product.stock || 0
             );
 
+        const physical =
+            Number(
+                physicalStock
+            );
 
-        const difference =
+        items.push({
+            productId:
+                product.id,
 
-            physical -
-            oldStock;
+            productName:
+                product.name ||
+                "Unknown Product",
 
+            systemStock,
+
+            physicalStock:
+                physical,
+
+            difference:
+                physical -
+                systemStock
+        });
+    });
+
+    const summary =
+        calculateStocktakeSummary();
+
+    return {
+        countedById:
+            user.id || null,
+
+        countedBy:
+            user.name || "Admin",
+
+        countedItems:
+            summary.counted,
+
+        shortages:
+            summary.shortages,
+
+        extraStock:
+            summary.extra,
+
+        items
+    };
+}
+
+
+//======================================================
+// SAVE LOCAL STOCKTAKE
+//======================================================
+
+function applyStocktakeLocally(
+    stocktake
+) {
+    const state =
+        typeof loadState === "function"
+            ? loadState()
+            : {};
+
+    const inventory =
+        Array.isArray(state.inventory)
+            ? state.inventory
+            : [];
+
+    stocktake.items.forEach(item => {
+        const product =
+            inventory.find(product => {
+                return (
+                    String(product.id) ===
+                    String(item.productId)
+                );
+            });
+
+        if (!product) return;
 
         if (
-            difference !== 0
+            item.difference !== 0 &&
+            typeof recordStockMovement ===
+            "function"
         ) {
-
-
             recordStockMovement({
-
                 productId:
                     product.id,
 
@@ -497,156 +491,277 @@ function saveStocktake() {
                     "Stocktake",
 
                 quantity:
-                    difference,
+                    item.difference,
 
                 notes:
-
-                    `Physical count changed stock from ${oldStock} to ${physical}`
-
+                    `Physical count changed stock from ${item.systemStock} to ${item.physicalStock}`
             });
+        }
 
+        product.stock =
+            item.physicalStock;
+    });
+
+    if (
+        typeof saveState ===
+        "function"
+    ) {
+       saveState({
+    ...state,
+    inventory,
+    sales: state.sales || []
+});
+    }
+
+    window.inventory =
+        inventory;
+}
+
+
+//======================================================
+// SAVE STOCKTAKE
+//======================================================
+
+async function saveStocktake() {
+    if (stocktakeSaving) {
+        return;
+    }
+
+    const countedIds =
+        Object.keys(
+            stocktakeCounts
+        );
+
+    if (
+        !countedIds.length
+    ) {
+        alert(
+            "Enter at least one physical stock quantity."
+        );
+
+        return;
+    }
+
+    const confirmed =
+        confirm(
+            "Save stocktake and update inventory quantities?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    const saveButton =
+        document.getElementById(
+            "save-stocktake-btn"
+        );
+
+    stocktakeSaving = true;
+
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent =
+            "Saving...";
+    }
+
+    try {
+        const stocktake =
+            await buildStocktakeRecord();
+
+        if (
+            !stocktake.items.length
+        ) {
+            alert(
+                "No valid counted products were found."
+            );
+
+            return;
+        }
+
+        console.log(
+            "Stocktake being saved:",
+            stocktake
+        );
+
+
+        //--------------------------------------------------
+        // SAVE ONLINE FIRST
+        //--------------------------------------------------
+
+       let cloudResult = null;
+
+if (
+    typeof saveStocktakeToSupabase ===
+    "function"
+) {
+    cloudResult =
+        await saveStocktakeToSupabase(
+            stocktake
+        );
+} else {
+    console.error(
+        "saveStocktakeToSupabase is not available."
+    );
+}
+
+
+//--------------------------------------------------
+// ONLY UPDATE LOCAL STOCK AFTER CLOUD SUCCESS
+//--------------------------------------------------
+
+if (!cloudResult) {
+    alert(
+        "Stocktake was not saved online. Inventory was not changed."
+    );
+
+    return;
+}
+        applyStocktakeLocally(
+            stocktake
+        );
+
+
+        //--------------------------------------------------
+        // REFRESH CLOUD PRODUCTS
+        //--------------------------------------------------
+
+        if (
+            typeof syncCloudProductsToPOS ===
+            "function"
+        ) {
+            await syncCloudProductsToPOS();
         }
 
 
-        product.stock =
-            physical;
+        //--------------------------------------------------
+        // RESET SCREEN
+        //--------------------------------------------------
 
+        stocktakeCounts = {};
 
-    });
+        renderStocktake();
 
+        updateStocktakeSummary();
 
-    saveState({
+        alert(
+            "Stocktake saved locally and online."
+        );
 
-        inventory,
+    } catch (error) {
+        console.error(
+            "Stocktake save failed:",
+            error
+        );
 
-        sales:
-            state.sales || []
+        alert(
+            `Stocktake could not be saved: ${
+                error.message ||
+                "Unknown error"
+            }`
+        );
 
-    });
+    } finally {
+        stocktakeSaving = false;
 
-
-    stocktakeCounts = {};
-
-
-    renderStocktake();
-
-    updateStocktakeSummary();
-
-
-    alert(
-
-        "Stocktake saved and inventory updated."
-
-    );
-
+        if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent =
+                "Save Stocktake";
+        }
+    }
 }
 
-//------------------------------------------------------
+
+//======================================================
 // SEARCH
-//------------------------------------------------------
+//======================================================
 
 function initializeStocktakeSearch() {
-
     const search =
+        document.getElementById(
+            "stocktake-search"
+        );
 
-        document
-            .getElementById(
-                "stocktake-search"
-            );
-
-
-    if (search) {
+    if (
+        search &&
+        search.dataset.ready !== "true"
+    ) {
+        search.dataset.ready =
+            "true";
 
         search.addEventListener(
-
             "input",
-
             () => {
-
                 renderStocktake(
                     search.value
                 );
-
             }
-
         );
-
     }
-
 
     const clear =
-
-        document
-            .getElementById(
-                "clear-stocktake-search"
-            );
-
-
-    if (clear) {
-
-        clear.addEventListener(
-
-            "click",
-
-            () => {
-
-                if (search) {
-
-                    search.value = "";
-
-                }
-
-
-                renderStocktake();
-
-            }
-
+        document.getElementById(
+            "clear-stocktake-search"
         );
 
-    }
+    if (
+        clear &&
+        clear.dataset.ready !== "true"
+    ) {
+        clear.dataset.ready =
+            "true";
 
+        clear.addEventListener(
+            "click",
+            () => {
+                if (search) {
+                    search.value = "";
+                }
+
+                renderStocktake();
+            }
+        );
+    }
 }
 
-//------------------------------------------------------
+
+//======================================================
 // INITIALIZE
-//------------------------------------------------------
+//======================================================
 
 function initializeStocktakeModule() {
-
     renderStocktake();
 
     updateStocktakeSummary();
 
     initializeStocktakeSearch();
 
-
     const saveButton =
-
-        document
-            .getElementById(
-                "save-stocktake-btn"
-            );
-
-
-    if (saveButton) {
-
-        saveButton.addEventListener(
-
-            "click",
-
-            saveStocktake
-
+        document.getElementById(
+            "save-stocktake-btn"
         );
 
-    }
+    if (
+        saveButton &&
+        saveButton.dataset.ready !==
+        "true"
+    ) {
+        saveButton.dataset.ready =
+            "true";
 
+        saveButton.addEventListener(
+            "click",
+            saveStocktake
+        );
+    }
 }
 
 
+//======================================================
+// AUTO START
+//======================================================
+
 document.addEventListener(
-
     "DOMContentLoaded",
-
     initializeStocktakeModule
-
 );
