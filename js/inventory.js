@@ -359,14 +359,13 @@ function editProduct(id) {
 // DELETE PRODUCT
 //======================================================
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
     const product =
         getProductById(id);
 
     if (!product) {
         return;
     }
-
 
     if (
         !confirmDelete(
@@ -376,61 +375,53 @@ function deleteProduct(id) {
         return;
     }
 
-
-    inventory =
-        inventory.filter(
-            currentProduct =>
-                String(
-                    currentProduct.id
-                ) !==
-                String(id)
+    if (
+        typeof deleteProductFromSupabase !==
+        "function"
+    ) {
+        alert(
+            "Cloud product deletion is unavailable."
         );
 
+        return;
+    }
 
-    persistInventory();
+    const success =
+        await deleteProductFromSupabase(id);
+
+    if (!success) {
+        return;
+    }
+
+    if (
+        typeof syncCloudProductsToPOS ===
+        "function"
+    ) {
+        await syncCloudProductsToPOS();
+    }
 
     renderInventory();
 
-
-    if (
-        typeof populateProductDropdown ===
-        "function"
-    ) {
-        populateProductDropdown();
-    }
-
-
-    if (
-        typeof updateDashboardMetrics ===
-        "function"
-    ) {
-        updateDashboardMetrics();
-    }
-
-
     showFeedback(
-        "Product deleted."
+        "Product deleted online."
     );
 }
-
 
 //======================================================
 // ADJUST STOCK
 //======================================================
 
-function adjustStock(
+async function adjustStock(
     productId,
     quantity
 ) {
     const product =
-        getProductById(
-            productId
-        );
+        getProductById(productId);
 
     if (!product) {
+        alert("Product not found.");
         return;
     }
-
 
     const reason =
         prompt(
@@ -447,80 +438,78 @@ function adjustStock(
                 : "Stock Out"
         );
 
-
     if (reason === null) {
         return;
     }
 
+    const currentStock =
+        Number(product.stock || 0);
+
+    const newStock =
+        currentStock +
+        Number(quantity);
+
+    if (newStock < 0) {
+        alert("Insufficient stock.");
+        return;
+    }
 
     if (
-        Number(product.stock) +
-        Number(quantity) <
-        0
+        typeof updateProductStockInSupabase !==
+        "function"
     ) {
         alert(
-            "Insufficient stock."
+            "Cloud stock updating is unavailable."
         );
 
         return;
     }
 
+    const saved =
+        await updateProductStockInSupabase(
+            product.id,
+            newStock
+        );
 
-    product.stock =
-        Number(product.stock) +
-        Number(quantity);
-
-
-    if (
-        typeof recordStockMovement ===
-        "function"
-    ) {
-        recordStockMovement({
-            productId:
-                product.id,
-
-            productName:
-                product.name,
-
-            type:
-                quantity > 0
-                    ? "Stock In"
-                    : "Stock Out",
-
-            quantity,
-
-            notes:
-                reason
-        });
+    if (!saved) {
+        return;
     }
 
+    // Save the movement online.
+    const { error: movementError } =
+        await supabaseClient
+            .from("stock_movements")
+            .insert({
+                product_id: product.id,
+                product_name: product.name,
+                type:
+                    quantity > 0
+                        ? "Stock In"
+                        : "Stock Out",
+                quantity: Number(quantity),
+                notes: reason
+            });
 
-    persistInventory();
+    if (movementError) {
+        console.warn(
+            "Stock updated, but movement was not saved online:",
+            movementError
+        );
+    }
+
+    if (
+        typeof syncCloudProductsToPOS ===
+        "function"
+    ) {
+        await syncCloudProductsToPOS();
+    }
 
     renderInventory();
 
-
-    if (
-        typeof populateProductDropdown ===
-        "function"
-    ) {
-        populateProductDropdown();
-    }
-
-
-    if (
-        typeof updateDashboardMetrics ===
-        "function"
-    ) {
-        updateDashboardMetrics();
-    }
-
-
     showFeedback(
-        "Stock updated."
+        "Stock updated online."
     );
 }
-
 
 //======================================================
 // INVENTORY METRICS
@@ -1879,13 +1868,14 @@ async function updateImportedCloudProduct(
                         0
                     ),
 
-                selling_price:
-                    Number(
-                        importedProduct
-                            .sellingPrice ||
-                        0
-                    ),
-
+                ...(importedProduct.sellingPrice !== null
+    ? {
+        selling_price:
+            Number(
+                importedProduct.sellingPrice
+            )
+    }
+    : {}),
                 //--------------------------------------------------
                 // EXCEL STOCK REPLACES CURRENT POS STOCK
                 //--------------------------------------------------
