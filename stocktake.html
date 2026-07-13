@@ -69,6 +69,17 @@
         </div>
 
 
+        <div class="inventory-card">
+
+            <strong>Cloud Status</strong>
+
+            <div id="stocktake-cloud-status" class="small">
+                Checking cloud connection…
+            </div>
+
+        </div>
+
+
         <!-- SUMMARY -->
 
         <div class="stats-grid">
@@ -137,22 +148,7 @@
             </div>
 
         </div>
-<!-- ======================================================
-SAVE STOCKTAKE
-====================================================== -->
 
-<div class="inventory-card">
-
-    <button
-        id="save-stocktake-btn"
-        class="primary-btn"
-        type="button">
-
-        Save Stocktake
-
-    </button>
-
-</div>
 
         <!-- STOCKTAKE TABLE -->
 
@@ -245,7 +241,7 @@ SAVE STOCKTAKE
 
 <!-- SUPABASE CONNECTION -->
 <script src="js/supabase-config.js"></script>
-<script src="js/disable-service-worker.js"></script>
+
 
 <!-- LOGIN AND USER SESSION -->
 <script src="js/auth-guard.js"></script>
@@ -269,6 +265,7 @@ SAVE STOCKTAKE
 
 <!-- NAVIGATION LAST -->
 <script src="js/navigation.js"></script>
+<script src="js/pwa-register.js"></script>
 </body>
 
 </html>

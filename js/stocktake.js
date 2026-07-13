@@ -523,150 +523,68 @@ function applyStocktakeLocally(
 //======================================================
 
 async function saveStocktake() {
-    if (stocktakeSaving) {
+    if (stocktakeSaving) return;
+
+    if (!Object.keys(stocktakeCounts).length) {
+        alert("Enter at least one physical stock quantity.");
         return;
     }
 
-    const countedIds =
-        Object.keys(
-            stocktakeCounts
-        );
-
-    if (
-        !countedIds.length
-    ) {
-        alert(
-            "Enter at least one physical stock quantity."
-        );
-
+    if (!confirm("Save stocktake and update inventory quantities?")) {
         return;
     }
 
-    const confirmed =
-        confirm(
-            "Save stocktake and update inventory quantities?"
-        );
-
-    if (!confirmed) {
-        return;
-    }
-
-    const saveButton =
-        document.getElementById(
-            "save-stocktake-btn"
-        );
-
+    const saveButton = document.getElementById("save-stocktake-btn");
     stocktakeSaving = true;
 
     if (saveButton) {
         saveButton.disabled = true;
-        saveButton.textContent =
-            "Saving...";
+        saveButton.textContent = "Saving...";
     }
 
     try {
-        const stocktake =
-            await buildStocktakeRecord();
+        const stocktake = await buildStocktakeRecord();
 
-        if (
-            !stocktake.items.length
-        ) {
-            alert(
-                "No valid counted products were found."
-            );
-
-            return;
+        if (!stocktake.items.length) {
+            throw new Error("No valid counted products were found.");
         }
 
-        console.log(
-            "Stocktake being saved:",
-            stocktake
-        );
+        if (typeof saveStocktakeToSupabase !== "function") {
+            throw new Error("The online Stocktake module did not load.");
+        }
 
+        console.log("Stocktake being saved:", stocktake);
 
-        //--------------------------------------------------
-        // SAVE ONLINE FIRST
-        //--------------------------------------------------
+        const cloudResult = await saveStocktakeToSupabase(stocktake);
 
-       let cloudResult = null;
+        if (!cloudResult) {
+            throw window.lastStocktakeError || new Error(
+                "Supabase did not accept the stocktake. Check the Console for details."
+            );
+        }
 
-if (
-    typeof saveStocktakeToSupabase ===
-    "function"
-) {
-    cloudResult =
-        await saveStocktakeToSupabase(
-            stocktake
-        );
-} else {
-    console.error(
-        "saveStocktakeToSupabase is not available."
-    );
-}
+        applyStocktakeLocally(stocktake);
 
-
-//--------------------------------------------------
-// ONLY UPDATE LOCAL STOCK AFTER CLOUD SUCCESS
-//--------------------------------------------------
-
-if (!cloudResult) {
-    alert(
-        "Stocktake was not saved online. Inventory was not changed."
-    );
-
-    return;
-}
-        applyStocktakeLocally(
-            stocktake
-        );
-
-
-        //--------------------------------------------------
-        // REFRESH CLOUD PRODUCTS
-        //--------------------------------------------------
-
-        if (
-            typeof syncCloudProductsToPOS ===
-            "function"
-        ) {
+        if (typeof syncCloudProductsToPOS === "function") {
             await syncCloudProductsToPOS();
         }
 
-
-        //--------------------------------------------------
-        // RESET SCREEN
-        //--------------------------------------------------
-
         stocktakeCounts = {};
-
         renderStocktake();
-
         updateStocktakeSummary();
 
-        alert(
-            "Stocktake saved locally and online."
-        );
+        alert("Stocktake saved locally and online.");
 
     } catch (error) {
-        console.error(
-            "Stocktake save failed:",
-            error
-        );
-
-        alert(
-            `Stocktake could not be saved: ${
-                error.message ||
-                "Unknown error"
-            }`
-        );
+        console.error("Stocktake save failed:", error);
+        alert(`Stocktake was not saved:\n\n${error.message || "Unknown error"}`);
 
     } finally {
         stocktakeSaving = false;
 
         if (saveButton) {
             saveButton.disabled = false;
-            saveButton.textContent =
-                "Save Stocktake";
+            saveButton.textContent = "Save Stocktake";
         }
     }
 }

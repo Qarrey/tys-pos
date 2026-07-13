@@ -1,345 +1,234 @@
 //======================================================
 // TYS POS
-// DEDICATED CLOUD STOCKTAKE MODULE
+// CLOUD STOCKTAKE MODULE
 //======================================================
 
 let stocktakeRealtimeChannel = null;
+window.lastStocktakeError = null;
 
+function setStocktakeCloudStatus(message, type = "info") {
+    const element = document.getElementById("stocktake-cloud-status");
+    if (!element) return;
 
-//======================================================
-// SAVE STOCKTAKE
-//======================================================
+    element.textContent = message;
+    element.dataset.status = type;
+}
+
+function stocktakeErrorMessage(prefix, error) {
+    const message = error?.message || error?.details || error?.hint || "Unknown error";
+    const code = error?.code ? ` (${error.code})` : "";
+    return `${prefix}: ${message}${code}`;
+}
+
+async function confirmStocktakeAdmin() {
+    const { data: sessionData, error: sessionError } =
+        await supabaseClient.auth.getSession();
+
+    if (sessionError) {
+        throw new Error(stocktakeErrorMessage("Login check failed", sessionError));
+    }
+
+    const user = sessionData.session?.user;
+
+    if (!user) {
+        throw new Error("No active login session was found.");
+    }
+
+    const { data: profile, error: profileError } = await supabaseClient
+        .from("profiles")
+        .select("id, full_name, role")
+        .eq("id", user.id)
+        .maybeSingle();
+
+    if (profileError) {
+        throw new Error(stocktakeErrorMessage("Profile check failed", profileError));
+    }
+
+    if (!profile) {
+        throw new Error("No POS profile exists for the logged-in account.");
+    }
+
+    if (String(profile.role || "").trim().toLowerCase() !== "admin") {
+        throw new Error("Only an Admin can save a stocktake.");
+    }
+
+    return {
+        userId: user.id,
+        name: profile.full_name || user.email || "Admin"
+    };
+}
 
 async function saveStocktakeToSupabase(stocktake) {
-    if (
-        !stocktake ||
-        !Array.isArray(stocktake.items) ||
-        stocktake.items.length === 0
-    ) {
-        console.error("No stocktake items supplied.");
+    window.lastStocktakeError = null;
+
+    if (!stocktake || !Array.isArray(stocktake.items) || !stocktake.items.length) {
+        const error = new Error("No counted products were supplied.");
+        window.lastStocktakeError = error;
         return null;
     }
 
-    console.log(
-        "Sending stocktake to Supabase:",
-        stocktake
-    );
+    if (!navigator.onLine) {
+        const error = new Error("This device is offline. Reconnect to the internet and try again.");
+        window.lastStocktakeError = error;
+        return null;
+    }
+
+    setStocktakeCloudStatus("Saving stocktake online…", "saving");
+
+    let headerId = null;
 
     try {
-        //--------------------------------------------------
-        // CONFIRM LOGIN
-        //--------------------------------------------------
+        const admin = await confirmStocktakeAdmin();
 
-        const { data: sessionData, error: sessionError } =
-            await supabaseClient.auth.getSession();
-
-        if (sessionError) {
-            throw sessionError;
-        }
-
-        if (!sessionData.session) {
-            throw new Error(
-                "You are not logged in."
-            );
-        }
-
-        const userId =
-            sessionData.session.user.id;
-
-
-        //--------------------------------------------------
-        // STOCKTAKE HEADER
-        //--------------------------------------------------
-
-        const {
-            data: header,
-            error: headerError
-        } = await supabaseClient
+        const { data: header, error: headerError } = await supabaseClient
             .from("stocktakes")
             .insert({
-                created_by:
-                    userId,
-
-                created_by_name:
-                    stocktake.countedBy ||
-                    "Admin",
-
-                counted_items:
-                    Number(
-                        stocktake.countedItems || 0
-                    ),
-
-                shortage_items:
-                    Number(
-                        stocktake.shortages || 0
-                    ),
-
-                extra_items:
-                    Number(
-                        stocktake.extraStock || 0
-                    )
+                created_by: admin.userId,
+                created_by_name: stocktake.countedBy || admin.name,
+                counted_items: Number(stocktake.countedItems || stocktake.items.length),
+                shortage_items: Number(stocktake.shortages || 0),
+                extra_items: Number(stocktake.extraStock || 0)
             })
-            .select()
+            .select("id, created_by, created_by_name, counted_items, shortage_items, extra_items, created_at")
             .single();
 
         if (headerError) {
-            throw new Error(
-                `Stocktake header: ${headerError.message}`
-            );
+            throw new Error(stocktakeErrorMessage("Could not save stocktake header", headerError));
         }
 
-        console.log(
-            "Stocktake header saved:",
-            header
-        );
+        headerId = header.id;
 
+        const itemRows = stocktake.items.map(item => ({
+            stocktake_id: header.id,
+            product_id: item.productId,
+            product_name: item.productName || "Unknown Product",
+            system_stock: Number(item.systemStock || 0),
+            physical_stock: Number(item.physicalStock || 0),
+            difference: Number(item.difference || 0)
+        }));
 
-        //--------------------------------------------------
-        // STOCKTAKE ITEMS
-        //--------------------------------------------------
+        const { error: itemsError } = await supabaseClient
+            .from("stocktake_items")
+            .insert(itemRows);
 
-        const itemRows =
-            stocktake.items.map(item => ({
-                stocktake_id:
-                    header.id,
-
-                product_id:
-                    item.productId,
-
-                product_name:
-                    item.productName ||
-                    "Unknown Product",
-
-                system_stock:
-                    Number(
-                        item.systemStock || 0
-                    ),
-
-                physical_stock:
-                    Number(
-                        item.physicalStock || 0
-                    ),
-
-                difference:
-                    Number(
-                        item.difference || 0
-                    )
-            }));
-
-        const { error: itemError } =
-            await supabaseClient
-                .from("stocktake_items")
-                .insert(itemRows);
-
-        if (itemError) {
-            await supabaseClient
-                .from("stocktakes")
-                .delete()
-                .eq("id", header.id);
-
-            throw new Error(
-                `Stocktake items: ${itemError.message}`
-            );
+        if (itemsError) {
+            throw new Error(stocktakeErrorMessage("Could not save stocktake items", itemsError));
         }
-
-        console.log(
-            "Stocktake items saved:",
-            itemRows
-        );
-
-
-        //--------------------------------------------------
-        // UPDATE PRODUCTS
-        //--------------------------------------------------
 
         for (const item of stocktake.items) {
-            const {
-                data: updatedProducts,
-                error: productError
-            } = await supabaseClient
+            const { data: updated, error: productError } = await supabaseClient
                 .from("products")
-                .update({
-                    stock:
-                        Number(
-                            item.physicalStock || 0
-                        )
-                })
-                .eq(
-                    "id",
-                    item.productId
-                )
-                .select("id, stock");
+                .update({ stock: Number(item.physicalStock || 0) })
+                .eq("id", item.productId)
+                .select("id")
+                .maybeSingle();
 
             if (productError) {
                 throw new Error(
-                    `Product ${item.productName}: ${productError.message}`
+                    stocktakeErrorMessage(`Could not update ${item.productName}`, productError)
                 );
             }
 
-            if (
-                !updatedProducts ||
-                updatedProducts.length === 0
-            ) {
+            if (!updated) {
                 throw new Error(
-                    `No cloud product matched ${item.productName}.`
+                    `No online product matched ${item.productName}. Refresh Products and try again.`
                 );
-            }
-
-
-            //--------------------------------------------------
-            // STOCK MOVEMENT
-            //--------------------------------------------------
-
-            if (
-                Number(item.difference || 0) !== 0
-            ) {
-                const { error: movementError } =
-                    await supabaseClient
-                        .from("stock_movements")
-                        .insert({
-                            product_id:
-                                item.productId,
-
-                            product_name:
-                                item.productName ||
-                                "Unknown Product",
-
-                            type:
-                                "Stocktake",
-
-                            quantity:
-                                Number(
-                                    item.difference || 0
-                                ),
-
-                            notes:
-                                `Physical count changed stock from ${item.systemStock} to ${item.physicalStock}`
-                        });
-
-                if (movementError) {
-                    console.warn(
-                        "Stock movement was not saved:",
-                        movementError
-                    );
-                }
             }
         }
 
-        console.log(
-            "Stocktake completed online:",
-            header
-        );
+        // Stock movements are useful history, but a movement-table problem must not
+        // invalidate an otherwise completed stocktake.
+        const movementRows = stocktake.items
+            .filter(item => Number(item.difference || 0) !== 0)
+            .map(item => ({
+                product_id: item.productId,
+                product_name: item.productName || "Unknown Product",
+                type: "Stocktake",
+                quantity: Number(item.difference || 0),
+                notes: `Physical count changed stock from ${item.systemStock} to ${item.physicalStock}`
+            }));
 
+        if (movementRows.length) {
+            const { error: movementError } = await supabaseClient
+                .from("stock_movements")
+                .insert(movementRows);
+
+            if (movementError) {
+                console.warn("Stocktake saved, but stock movement history failed:", movementError);
+            }
+        }
+
+        setStocktakeCloudStatus("Stocktake saved online.", "success");
+        console.log("Stocktake saved online:", header);
         return header;
 
     } catch (error) {
-        console.error(
-            "Stocktake cloud save failed:",
-            error
-        );
+        window.lastStocktakeError = error;
+        console.error("Stocktake cloud save failed:", error);
 
-        alert(
-            `Stocktake cloud save failed: ${
-                error.message ||
-                "Unknown error"
-            }`
-        );
+        // Remove an incomplete header and its items if a later step failed.
+        if (headerId) {
+            const { error: cleanupError } = await supabaseClient
+                .from("stocktakes")
+                .delete()
+                .eq("id", headerId);
 
+            if (cleanupError) {
+                console.warn("Could not remove incomplete stocktake:", cleanupError);
+            }
+        }
+
+        setStocktakeCloudStatus(error.message || "Stocktake failed.", "error");
         return null;
     }
 }
 
-
-//======================================================
-// REALTIME PRODUCT REFRESH
-//======================================================
-
 function subscribeToStocktakeChanges() {
     if (stocktakeRealtimeChannel) {
-        supabaseClient.removeChannel(
-            stocktakeRealtimeChannel
-        );
+        supabaseClient.removeChannel(stocktakeRealtimeChannel);
     }
 
-    stocktakeRealtimeChannel =
-        supabaseClient
-            .channel(
-                "tys-stocktake-only-realtime"
-            )
-            .on(
-                "postgres_changes",
-                {
-                    event: "*",
-                    schema: "public",
-                    table: "stocktakes"
-                },
-                async () => {
-                    if (
-                        typeof syncCloudProductsToPOS ===
-                        "function"
-                    ) {
-                        await syncCloudProductsToPOS();
-                    }
+    stocktakeRealtimeChannel = supabaseClient
+        .channel("tys-stocktake-realtime-v2")
+        .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "stocktakes" },
+            async () => {
+                if (typeof syncCloudProductsToPOS === "function") {
+                    await syncCloudProductsToPOS();
                 }
-            )
-            .subscribe(status => {
-                console.log(
-                    "Stocktake realtime:",
-                    status
+            }
+        )
+        .subscribe(status => {
+            console.log("Stocktake realtime:", status);
+
+            if (status === "SUBSCRIBED") {
+                setStocktakeCloudStatus("Cloud connection ready.", "success");
+            } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+                setStocktakeCloudStatus(
+                    "Realtime is unavailable, but normal online saving can still work.",
+                    "warning"
                 );
-            });
+            }
+        });
 }
-
-
-//======================================================
-// INITIALIZE
-//======================================================
 
 async function initializeCloudStocktake() {
-    if (
-        typeof supabaseClient ===
-        "undefined"
-    ) {
-        console.error(
-            "Supabase client is unavailable."
-        );
-
+    if (typeof supabaseClient === "undefined") {
+        setStocktakeCloudStatus("Supabase connection is unavailable.", "error");
         return;
     }
 
-    const { data, error } =
-        await supabaseClient.auth.getSession();
-
-    if (error) {
-        console.error(
-            "Could not read login session:",
-            error
-        );
-
-        return;
+    try {
+        await confirmStocktakeAdmin();
+        setStocktakeCloudStatus("Cloud connection ready.", "success");
+        subscribeToStocktakeChanges();
+    } catch (error) {
+        window.lastStocktakeError = error;
+        setStocktakeCloudStatus(error.message, "error");
+        console.error("Cloud stocktake initialization failed:", error);
     }
-
-    if (!data.session) {
-        console.warn(
-            "No session. Stocktake cloud sync was not started."
-        );
-
-        return;
-    }
-
-    subscribeToStocktakeChanges();
-
-    console.log(
-        "cloud-stocktake.js initialized"
-    );
 }
 
-
-document.addEventListener(
-    "DOMContentLoaded",
-    initializeCloudStocktake
-);
-
-console.log(
-    "cloud-stocktake.js loaded"
-);
+document.addEventListener("DOMContentLoaded", initializeCloudStocktake, { once: true });
+console.log("cloud-stocktake.js loaded");

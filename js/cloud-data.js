@@ -1388,7 +1388,7 @@ async function loadCloudStocktakes() {
 // SAVE STOCKTAKE ONLINE
 //------------------------------------------------------
 
-async function saveStocktakeToSupabase(stocktake) {
+async function legacySaveStocktakeToSupabase(stocktake) {
     if (
         !stocktake ||
         !Array.isArray(stocktake.items) ||

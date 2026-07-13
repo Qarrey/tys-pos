@@ -1,0 +1,16 @@
+TYS POS ROLE GUARD UPDATE
+
+Cashier pages:
+- index.html
+- purchases.html
+- register.html
+
+All other application pages are hidden and blocked until Supabase confirms an active Admin profile.
+The Sale Date field is hidden and disabled by default and is revealed only for a confirmed Admin.
+
+After replacing your project:
+1. Save all files.
+2. Push to GitHub.
+3. Wait for GitHub Pages to deploy.
+4. Unregister the old service worker once (DevTools > Application > Service Workers > Unregister).
+5. Hard refresh.
