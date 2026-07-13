@@ -125,9 +125,67 @@
                     Add
 
                 </button>
+<button
+    id="camera-scan-btn"
+    class="secondary-btn"
+    type="button">
 
+    📷 Scan with Camera
 
-                <button
+</button>
+
+           <!-- ==================================================
+PHONE CAMERA BARCODE SCANNER
+=================================================== -->
+
+<div
+    id="camera-scanner-panel"
+    class="inventory-card"
+    hidden>
+
+    <div class="section-heading">
+
+        <h3>
+            Scan Product Barcode
+        </h3>
+
+        <p id="camera-scanner-status">
+            Point the rear camera at the product barcode.
+        </p>
+
+    </div>
+
+    <video
+        id="camera-scanner-video"
+        autoplay
+        muted
+        playsinline
+        style="
+            width: 100%;
+            max-width: 520px;
+            min-height: 240px;
+            background: #111;
+            border-radius: 12px;
+            object-fit: cover;
+        ">
+    </video>
+
+    <div class="form-actions">
+
+        <button
+            id="close-camera-scanner-btn"
+            class="danger-btn"
+            type="button">
+
+            Close Camera
+
+        </button>
+
+    </div>
+
+</div>     
+
+              <button
 
                     id="clear-search"
 

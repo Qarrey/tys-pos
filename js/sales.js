@@ -645,7 +645,454 @@ function initializeBarcodeScanner() {
     }
 }
 
+//======================================================
+// PHONE CAMERA BARCODE SCANNER
+//======================================================
 
+let cameraBarcodeStream = null;
+let cameraBarcodeDetector = null;
+let cameraBarcodeScanning = false;
+let cameraBarcodeFrame = null;
+
+
+//------------------------------------------------------
+// UPDATE CAMERA MESSAGE
+//------------------------------------------------------
+
+function setCameraScannerStatus(
+    message
+) {
+    const status =
+        document.getElementById(
+            "camera-scanner-status"
+        );
+
+    if (status) {
+        status.textContent =
+            message;
+    }
+}
+
+
+//------------------------------------------------------
+// STOP PHONE CAMERA
+//------------------------------------------------------
+
+function stopCameraBarcodeScanner() {
+    cameraBarcodeScanning =
+        false;
+
+    if (cameraBarcodeFrame) {
+        cancelAnimationFrame(
+            cameraBarcodeFrame
+        );
+
+        cameraBarcodeFrame =
+            null;
+    }
+
+    if (cameraBarcodeStream) {
+        cameraBarcodeStream
+            .getTracks()
+            .forEach(track => {
+                track.stop();
+            });
+
+        cameraBarcodeStream =
+            null;
+    }
+
+    const video =
+        document.getElementById(
+            "camera-scanner-video"
+        );
+
+    if (video) {
+        video.pause();
+        video.srcObject =
+            null;
+    }
+
+    const panel =
+        document.getElementById(
+            "camera-scanner-panel"
+        );
+
+    if (panel) {
+        panel.hidden =
+            true;
+    }
+
+    const button =
+        document.getElementById(
+            "camera-scan-btn"
+        );
+
+    if (button) {
+        button.disabled =
+            false;
+
+        button.textContent =
+            "📷 Scan with Camera";
+    }
+}
+
+
+//------------------------------------------------------
+// USE DETECTED BARCODE
+//------------------------------------------------------
+
+function useCameraBarcode(
+    barcode
+) {
+    const cleanBarcode =
+        String(
+            barcode || ""
+        )
+            .trim();
+
+    if (!cleanBarcode) {
+        return;
+    }
+
+    const input =
+        document.getElementById(
+            "barcode-input"
+        );
+
+    if (!input) {
+        stopCameraBarcodeScanner();
+
+        alert(
+            "The barcode input was not found."
+        );
+
+        return;
+    }
+
+    input.value =
+        cleanBarcode;
+
+    stopCameraBarcodeScanner();
+
+    addProductByBarcode();
+}
+
+
+//------------------------------------------------------
+// KEEP CHECKING CAMERA FOR BARCODES
+//------------------------------------------------------
+
+async function detectCameraBarcode() {
+    if (
+        !cameraBarcodeScanning ||
+        !cameraBarcodeDetector
+    ) {
+        return;
+    }
+
+    const video =
+        document.getElementById(
+            "camera-scanner-video"
+        );
+
+    if (
+        !video ||
+        video.readyState < 2
+    ) {
+        cameraBarcodeFrame =
+            requestAnimationFrame(
+                detectCameraBarcode
+            );
+
+        return;
+    }
+
+    try {
+        const barcodes =
+            await cameraBarcodeDetector
+                .detect(video);
+
+        if (
+            barcodes &&
+            barcodes.length
+        ) {
+            const barcode =
+                barcodes[0]
+                    .rawValue;
+
+            if (barcode) {
+                setCameraScannerStatus(
+                    `Barcode detected: ${barcode}`
+                );
+
+                useCameraBarcode(
+                    barcode
+                );
+
+                return;
+            }
+        }
+
+    } catch (error) {
+        console.warn(
+            "Camera barcode detection failed:",
+            error
+        );
+    }
+
+    if (cameraBarcodeScanning) {
+        cameraBarcodeFrame =
+            requestAnimationFrame(
+                detectCameraBarcode
+            );
+    }
+}
+
+
+//------------------------------------------------------
+// OPEN PHONE CAMERA
+//------------------------------------------------------
+
+async function startCameraBarcodeScanner() {
+    if (
+        !window.isSecureContext
+    ) {
+        alert(
+            "Camera scanning requires the secure online HTTPS version of the POS."
+        );
+
+        return;
+    }
+
+    if (
+        !navigator.mediaDevices ||
+        !navigator.mediaDevices
+            .getUserMedia
+    ) {
+        alert(
+            "This browser cannot access the camera."
+        );
+
+        return;
+    }
+
+    if (
+        !("BarcodeDetector" in window)
+    ) {
+        alert(
+            "Camera barcode detection is not supported by this browser. Please use Chrome on Android, or continue using the USB scanner."
+        );
+
+        return;
+    }
+
+    const panel =
+        document.getElementById(
+            "camera-scanner-panel"
+        );
+
+    const video =
+        document.getElementById(
+            "camera-scanner-video"
+        );
+
+    const button =
+        document.getElementById(
+            "camera-scan-btn"
+        );
+
+    if (
+        !panel ||
+        !video
+    ) {
+        alert(
+            "The camera scanner section is missing from index.html."
+        );
+
+        return;
+    }
+
+    try {
+        button.disabled =
+            true;
+
+        button.textContent =
+            "Opening Camera...";
+
+        panel.hidden =
+            false;
+
+        setCameraScannerStatus(
+            "Allow camera access, then point the rear camera at the barcode."
+        );
+
+        cameraBarcodeStream =
+            await navigator
+                .mediaDevices
+                .getUserMedia({
+                    audio:
+                        false,
+
+                    video: {
+                        facingMode: {
+                            ideal:
+                                "environment"
+                        },
+
+                        width: {
+                            ideal:
+                                1280
+                        },
+
+                        height: {
+                            ideal:
+                                720
+                        }
+                    }
+                });
+
+        video.srcObject =
+            cameraBarcodeStream;
+
+        await video.play();
+
+        const supportedFormats =
+            await BarcodeDetector
+                .getSupportedFormats();
+
+        const preferredFormats = [
+            "ean_13",
+            "ean_8",
+            "upc_a",
+            "upc_e",
+            "code_128",
+            "code_39",
+            "itf"
+        ];
+
+        const availableFormats =
+            preferredFormats.filter(
+                format =>
+                    supportedFormats
+                        .includes(
+                            format
+                        )
+            );
+
+        cameraBarcodeDetector =
+            availableFormats.length
+                ? new BarcodeDetector({
+                    formats:
+                        availableFormats
+                })
+                : new BarcodeDetector();
+
+        cameraBarcodeScanning =
+            true;
+
+        button.textContent =
+            "Camera Open";
+
+        setCameraScannerStatus(
+            "Point the camera at the barcode. Keep the barcode clear and steady."
+        );
+
+        detectCameraBarcode();
+
+    } catch (error) {
+        console.error(
+            "Could not open camera:",
+            error
+        );
+
+        stopCameraBarcodeScanner();
+
+        if (
+            error.name ===
+            "NotAllowedError"
+        ) {
+            alert(
+                "Camera permission was denied. Allow camera access in the browser settings and try again."
+            );
+
+            return;
+        }
+
+        if (
+            error.name ===
+            "NotFoundError"
+        ) {
+            alert(
+                "No camera was found on this device."
+            );
+
+            return;
+        }
+
+        alert(
+            `Could not open the camera: ${
+                error.message ||
+                "Unknown camera error"
+            }`
+        );
+    }
+}
+
+
+//------------------------------------------------------
+// INITIALIZE PHONE CAMERA SCANNER
+//------------------------------------------------------
+
+function initializeCameraBarcodeScanner() {
+    const openButton =
+        document.getElementById(
+            "camera-scan-btn"
+        );
+
+    const closeButton =
+        document.getElementById(
+            "close-camera-scanner-btn"
+        );
+
+    if (
+        openButton &&
+        !openButton.dataset.ready
+    ) {
+        openButton.dataset.ready =
+            "true";
+
+        openButton.addEventListener(
+            "click",
+            startCameraBarcodeScanner
+        );
+    }
+
+    if (
+        closeButton &&
+        !closeButton.dataset.ready
+    ) {
+        closeButton.dataset.ready =
+            "true";
+
+        closeButton.addEventListener(
+            "click",
+            stopCameraBarcodeScanner
+        );
+    }
+
+    document.addEventListener(
+        "visibilitychange",
+        () => {
+            if (
+                document.hidden &&
+                cameraBarcodeScanning
+            ) {
+                stopCameraBarcodeScanner();
+            }
+        }
+    );
+}
 //======================================================
 // CASHIER
 //======================================================
@@ -1637,9 +2084,12 @@ async function initializeSalesModule() {
     renderBestSellers();
 
     initializeProductSearch();
+
     initializeBarcodeScanner();
+
+    initializeCameraBarcodeScanner();
+
     populateCashierDropdown();
-    initializeMobileCartToggle();
 
     await configureSaleDateAccess();
 
