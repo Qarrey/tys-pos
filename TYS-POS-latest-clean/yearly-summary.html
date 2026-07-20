@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Yearly Summary | TYS POS</title>
+
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body data-admin-page>
+
+<div class="app-shell">
+
+<header class="topbar">
+    <div>
+        <p class="eyebrow">Yearly Report</p>
+        <h1>Yearly Business Summary</h1>
+    </div>
+
+    <div class="status-card">
+        <strong>TYS General Store</strong>
+
+       <nav
+    id="main-navigation"
+    class="top-nav">
+</nav>
+    </div>
+</header>
+
+<main class="panel">
+
+    <div class="section-heading">
+        <h2>This Year</h2>
+        <p>Review yearly revenue, profit, expenses and net profit.</p>
+    </div>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <span>Yearly Revenue</span>
+            <strong id="yearly-revenue">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Gross Profit</span>
+            <strong id="yearly-gross-profit">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Expenses</span>
+            <strong id="yearly-expenses">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Net Profit</span>
+            <strong id="yearly-net-profit">KSh 0.00</strong>
+        </div>
+
+    </div>
+
+    <div class="inventory-card">
+        <h3>Actions</h3>
+
+        <button id="print-yearly-summary" class="primary-btn">
+            Print Yearly Summary
+        </button>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Monthly Breakdown</h3>
+
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Month</th>
+                    <th>Sales Count</th>
+                    <th>Revenue</th>
+                    <th>Gross Profit</th>
+                    <th>Expenses</th>
+                    <th>Net Profit</th>
+                </tr>
+            </thead>
+
+            <tbody id="yearly-breakdown-list">
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">No yearly data found.</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/cloud-sales.js"></script>
+<script src="js/yearly-summary.js"></script>
+<script src="js/navigation.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase-config.js"></script>
+<script src="js/disable-service-worker.js"></script>
+
+<script src="js/auth-guard.js"></script>
+
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+
+<script src="js/role-guard.js"></script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Backup & Restore | TYS POS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body data-admin-page>
+
+<div class="app-shell">
+
+<header class="topbar">
+    <div>
+        <p class="eyebrow">Backup</p>
+        <h1>Backup & Restore</h1>
+    </div>
+
+    <div class="status-card">
+        <strong>TYS General Store</strong>
+
+        <nav class="top-nav">
+            <a href="index.html" class="nav-link">POS</a>
+            <a href="inventory.html" class="nav-link">Inventory</a>
+            <a href="purchases.html" class="nav-link">Purchases</a>
+            <a href="suppliers.html" class="nav-link">Suppliers</a>
+            <a href="profit.html" class="nav-link">Profit</a>
+            <a href="expenses.html" class="nav-link">Expenses</a>
+            <a href="reports.html" class="nav-link">Reports</a>
+            <a href="settings.html" class="nav-link">Settings</a>
+        </nav>
+    </div>
+</header>
+
+<main class="panel">
+
+    <div class="section-heading">
+        <h2>Data Backup</h2>
+        <p>Export or restore all POS data.</p>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Export Backup</h3>
+        <p>Download a JSON backup of inventory, sales, suppliers, purchases, expenses and stock movements.</p>
+
+        <button id="export-backup-btn" class="primary-btn" type="button">
+    Download Backup
+</button>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Restore Backup</h3>
+        <p>Select a backup file to restore your POS data.</p>
+
+        <input id="restore-backup-file" type="file" accept=".json">
+
+        <button id="restore-backup-btn" class="secondary-btn">
+            Restore Backup
+        </button>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Danger Zone</h3>
+        <p>This will delete all local POS data from this browser.</p>
+
+        <button id="reset-database-btn" class="danger-btn">
+            Reset Database
+        </button>
+    </div>
+
+</main>
+
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/backup.js"></script>
+<script src="js/navigation.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase-config.js"></script>
+<script src="js/disable-service-worker.js"></script>
+
+<script src="js/auth-guard.js"></script>
+
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+
+<script src="js/role-guard.js"></script>
+
+</body>
+</html>

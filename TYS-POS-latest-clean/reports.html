@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports | TYS POS</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body data-admin-page>
+
+<div class="app-shell">
+
+<header class="topbar">
+    <div>
+        <p class="eyebrow">Reports</p>
+        <h1>Business Reports</h1>
+    </div>
+
+    <div class="status-card">
+        <a class="nav-link" href="index.html">POS</a>
+        <a class="nav-link" href="inventory.html">Inventory</a>
+        <a class="nav-link" href="purchases.html">Purchases</a>
+        <a class="nav-link" href="stock.html">Stock</a>
+        <a href="customers.html" class="nav-link">Customers</a>
+
+    </div>
+</header>
+
+<main class="panel">
+
+    <div class="section-heading">
+        <h2>Reports Dashboard</h2>
+        <p>Review sales, stock and profit summaries.</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Today Revenue</span>
+            <strong id="report-today-revenue">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Today Profit</span>
+            <strong id="report-today-profit">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Monthly Revenue</span>
+            <strong id="report-monthly-revenue">KSh 0.00</strong>
+        </div>
+        <div class="stat-card">
+    <span>Net Profit</span>
+    <strong id="report-net-profit">KSh 0.00</strong>
+</div>
+
+        <div class="stat-card">
+            <span>Inventory Value</span>
+            <strong id="report-inventory-value">KSh 0.00</strong>
+        </div>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Export Reports</h3>
+
+        <button class="secondary-btn" onclick="exportSalesReport()">
+            Export Sales Report
+        </button>
+
+        <button class="secondary-btn" onclick="exportInventoryReport()">
+            Export Inventory Report
+        </button>
+    </div>
+
+</main>
+
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/cloud-sales.js"></script>
+<script src="js/reports.js"></script>
+<script src="app.js"></script>
+<script src="js/navigation.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase-config.js"></script>
+<script src="js/disable-service-worker.js"></script>
+
+<script src="js/auth-guard.js"></script>
+
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+
+<script src="js/role-guard.js"></script>
+</body>
+</html>

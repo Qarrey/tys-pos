@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <meta name="theme-color"
+          content="#0f172a">
+
+    <title>Suppliers | TYS POS</title>
+
+    <link rel="stylesheet"
+          href="styles.css">
+
+    <link rel="manifest"
+          href="manifest.json">
+
+</head>
+
+<body data-admin-page>
+
+<div class="app-shell">
+
+<!-- ======================================================
+HEADER
+====================================================== -->
+
+<header class="topbar">
+
+    <div>
+
+        <p class="eyebrow">
+
+            Suppliers
+
+        </p>
+
+        <h1>
+
+            Supplier Management
+
+        </h1>
+
+    </div>
+
+    <div class="status-card">
+
+        <strong>
+
+            TYS General Store
+
+        </strong>
+
+        <nav
+    id="main-navigation"
+    class="top-nav">
+</nav>
+    </div>
+
+</header>
+
+<!-- ======================================================
+MAIN
+====================================================== -->
+
+<main class="panel">
+
+<div class="section-heading">
+
+<h2>
+
+Supplier Dashboard
+
+</h2>
+
+<p>
+
+Manage all suppliers and their contact information.
+
+</p>
+
+</div>
+
+<!-- ======================================================
+DASHBOARD
+====================================================== -->
+
+<div class="stats-grid">
+
+<div class="stat-card">
+
+<span>
+
+Total Suppliers
+
+</span>
+
+<strong id="metric-suppliers">
+
+0
+
+</strong>
+
+</div>
+
+<div class="stat-card">
+
+<span>
+
+Products
+
+</span>
+
+<strong id="metric-products">
+
+0
+
+</strong>
+
+</div>
+
+<div class="stat-card">
+
+<span>
+
+Purchases
+
+</span>
+
+<strong id="metric-purchases">
+
+0
+
+</strong>
+
+</div>
+
+<div class="stat-card">
+
+<span>
+
+Inventory Value
+
+</span>
+
+<strong id="metric-inventory-value">
+
+KSh 0.00
+
+</strong>
+
+</div>
+
+</div>
+
+<!-- ======================================================
+SUPPLIER FORM
+====================================================== -->
+
+<div class="inventory-card">
+
+<h3>
+
+Add Supplier
+
+</h3>
+
+<form id="supplier-form">
+<div class="form-grid">
+
+    <div class="field">
+
+        <label>
+
+            Supplier Name
+
+        </label>
+
+        <input
+
+            id="supplier-name"
+
+            type="text"
+
+            required>
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Contact Person
+
+        </label>
+
+        <input
+
+            id="supplier-contact"
+
+            type="text">
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Phone Number
+
+        </label>
+
+        <input
+
+            id="supplier-phone"
+
+            type="tel">
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Email Address
+
+        </label>
+
+        <input
+
+            id="supplier-email"
+
+            type="email">
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Address
+
+        </label>
+
+        <textarea
+
+            id="supplier-address"
+
+            rows="3"
+
+            placeholder="Supplier address"></textarea>
+
+    </div>
+
+    <div class="field">
+
+        <label>
+
+            Notes
+
+        </label>
+
+        <textarea
+
+            id="supplier-notes"
+
+            rows="3"
+
+            placeholder="Optional notes"></textarea>
+
+    </div>
+
+</div>
+
+<div class="form-actions">
+
+    <button
+
+        type="submit"
+
+        class="primary-btn">
+
+        Save Supplier
+
+    </button>
+
+    <button
+
+        type="reset"
+
+        class="secondary-btn">
+
+        Clear
+
+    </button>
+
+</div>
+
+</form>
+
+</div>
+
+<!-- ======================================================
+SUPPLIER SUMMARY
+====================================================== -->
+
+<div class="inventory-card">
+
+    <h3>
+
+        Supplier Summary
+
+    </h3>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <span>
+
+                Total Suppliers
+
+            </span>
+
+            <strong id="supplier-count">
+
+                0
+
+            </strong>
+
+        </div>
+
+        <div class="stat-card">
+
+            <span>
+
+                Active Suppliers
+
+            </span>
+
+            <strong id="active-suppliers">
+
+                0
+
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+<!-- ======================================================
+SEARCH & SUPPLIER LIST
+====================================================== -->
+
+<div class="inventory-card">
+
+    <div class="section-heading">
+
+        <h3>
+
+            Suppliers
+
+        </h3>
+
+        <p>
+
+            Search, edit and manage suppliers.
+
+        </p>
+
+    </div>
+
+    <div class="toolbar">
+
+        <input
+
+            id="supplier-search"
+
+            type="search"
+
+            placeholder="Search supplier, contact or phone">
+
+        <button
+
+            id="clear-supplier-search"
+
+            type="button"
+
+            class="secondary-btn">
+
+            Clear
+
+        </button>
+
+    </div>
+
+</div>
+
+<!-- ======================================================
+SUPPLIER TABLE
+====================================================== -->
+
+<div class="inventory-card">
+
+<table class="inventory-table">
+
+<thead>
+
+<tr>
+
+<th>Supplier</th>
+
+<th>Contact</th>
+
+<th>Phone</th>
+
+<th>Email</th>
+
+<th>Address</th>
+
+<th>Actions</th>
+
+</tr>
+
+</thead>
+
+<tbody id="supplier-list">
+
+<tr>
+
+<td colspan="6">
+
+<div class="empty-state">
+
+No suppliers available.
+
+</div>
+
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+</div>
+
+<!-- ======================================================
+SUPPLIER DETAILS
+====================================================== -->
+
+<div class="inventory-card">
+
+<h3>
+
+Supplier Details
+
+</h3>
+
+<div id="supplier-details">
+
+<div class="empty-state">
+
+Select a supplier to view full details.
+
+</div>
+
+</div>
+
+</div>
+
+</main>
+<!-- ======================================================
+SCRIPTS
+====================================================== -->
+
+<script src="inventory-seed.js"></script>
+
+<script src="js/database.js"></script>
+
+<script src="js/utils.js"></script>
+<script src="js/cloud-data.js"></script>
+
+<script src="js/dashboard.js"></script>
+
+<script src="js/inventory.js"></script>
+
+<script src="js/suppliers.js"></script>
+
+<script src="js/purchases.js"></script>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/suppliers.js"></script>
+<script src="app.js"></script>
+<script src="js/navigation.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase-config.js"></script>
+<script src="js/disable-service-worker.js"></script>
+
+<script src="js/auth-guard.js"></script>
+
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+
+<script src="js/role-guard.js"></script>
+</div>
+
+</body>
+
+</html>

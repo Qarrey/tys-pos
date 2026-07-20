@@ -1,0 +1,22 @@
+TYS POS STABLE CLEAN BUILD
+
+Cleanup completed:
+- Fixed the mobile View Cart button and full-screen mobile cart behavior.
+- Added reliable cart item count to the mobile button.
+- Restored phone camera barcode scanning where it was missing from the outer project copy.
+- Added safe shared global data initialization for inventory, sales, purchases, suppliers, expenses, and stock movements.
+- Removed duplicate module initialization that could attach button listeners more than once.
+- Kept app.js as the single initializer for Sales and Inventory modules.
+- Removed nested old project copies and ZIP clutter from this release.
+- Checked every JavaScript file with Node syntax validation.
+- Checked all HTML files for duplicate IDs and missing local script files.
+
+Recommended test before Git push:
+1. Admin and Cashier login.
+2. Add product to cart and tap View Cart on a phone.
+3. Close cart and reopen it.
+4. Complete one sale.
+5. Edit inventory and use + Stock / - Stock.
+6. Record a purchase.
+7. Test USB/manual barcode and phone camera barcode scanning.
+8. Confirm Supabase changes on another device.

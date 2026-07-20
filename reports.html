@@ -17,81 +17,127 @@
     </div>
 
     <div class="status-card">
-        <a class="nav-link" href="index.html">POS</a>
-        <a class="nav-link" href="inventory.html">Inventory</a>
-        <a class="nav-link" href="purchases.html">Purchases</a>
-        <a class="nav-link" href="stock.html">Stock</a>
-        <a href="customers.html" class="nav-link">Customers</a>
-
+        <strong>TYS General Store</strong>
+        <nav id="main-navigation" class="top-nav"></nav>
     </div>
 </header>
 
 <main class="panel">
-
     <div class="section-heading">
         <h2>Reports Dashboard</h2>
-        <p>Review sales, stock and profit summaries.</p>
+        <p>Choose any date range to review sales, expenses and profit.</p>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Choose Report Dates</h3>
+
+        <div class="form-grid">
+            <div class="field">
+                <label for="report-date-from">From Date</label>
+                <input id="report-date-from" type="date">
+            </div>
+
+            <div class="field">
+                <label for="report-date-to">To Date</label>
+                <input id="report-date-to" type="date">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button id="apply-report-filter" class="primary-btn" type="button">Apply Filter</button>
+            <button id="clear-report-filter" class="secondary-btn" type="button">All Dates</button>
+            <button id="report-today-btn" class="secondary-btn" type="button">Today</button>
+            <button id="report-week-btn" class="secondary-btn" type="button">This Week</button>
+            <button id="report-month-btn" class="secondary-btn" type="button">This Month</button>
+        </div>
+
+        <p class="small">Showing: <strong id="report-range-label">All recorded dates</strong></p>
     </div>
 
     <div class="stats-grid">
         <div class="stat-card">
-            <span>Today Revenue</span>
-            <strong id="report-today-revenue">KSh 0.00</strong>
+            <span>Sales Transactions</span>
+            <strong id="report-sales-count">0</strong>
         </div>
 
         <div class="stat-card">
-            <span>Today Profit</span>
-            <strong id="report-today-profit">KSh 0.00</strong>
+            <span>Revenue</span>
+            <strong id="report-range-revenue">KSh 0.00</strong>
         </div>
 
         <div class="stat-card">
-            <span>Monthly Revenue</span>
-            <strong id="report-monthly-revenue">KSh 0.00</strong>
+            <span>Gross Profit</span>
+            <strong id="report-range-profit">KSh 0.00</strong>
         </div>
-        <div class="stat-card">
-    <span>Net Profit</span>
-    <strong id="report-net-profit">KSh 0.00</strong>
-</div>
 
         <div class="stat-card">
-            <span>Inventory Value</span>
+            <span>Expenses</span>
+            <strong id="report-range-expenses">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Net Profit</span>
+            <strong id="report-net-profit">KSh 0.00</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Current Inventory Value</span>
             <strong id="report-inventory-value">KSh 0.00</strong>
         </div>
     </div>
 
     <div class="inventory-card">
-        <h3>Export Reports</h3>
+        <div class="section-heading">
+            <h3>Sales in Selected Dates</h3>
+            <p>Each transaction shows the exact products sold.</p>
+        </div>
 
-        <button class="secondary-btn" onclick="exportSalesReport()">
-            Export Sales Report
-        </button>
-
-        <button class="secondary-btn" onclick="exportInventoryReport()">
-            Export Inventory Report
-        </button>
+        <div style="overflow-x:auto;">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Items Sold</th>
+                        <th>Cashier</th>
+                        <th>Payment</th>
+                        <th>Total</th>
+                        <th>Profit</th>
+                    </tr>
+                </thead>
+                <tbody id="report-sales-list">
+                    <tr>
+                        <td colspan="6"><div class="empty-state">No sales recorded.</div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
+    <div class="inventory-card">
+        <h3>Export Reports</h3>
+        <div class="form-actions">
+            <button id="export-sales-report-btn" class="secondary-btn" type="button">Export Filtered Sales</button>
+            <button id="export-inventory-report-btn" class="secondary-btn" type="button">Export Inventory</button>
+        </div>
+    </div>
 </main>
 
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/disable-service-worker.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+<script src="js/role-guard.js"></script>
 <script src="inventory-seed.js"></script>
 <script src="js/database.js"></script>
 <script src="js/utils.js"></script>
+<script src="app.js"></script>
+<script src="js/expenses.js"></script>
 <script src="js/cloud-sales.js"></script>
 <script src="js/reports.js"></script>
-<script src="app.js"></script>
 <script src="js/navigation.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script src="js/supabase-config.js"></script>
-<script src="js/disable-service-worker.js"></script>
-
-<script src="js/auth-guard.js"></script>
-
-<script src="js/user-session.js"></script>
-<script src="js/admin-ui-guard.js"></script>
-
-<script src="js/role-guard.js"></script>
 </body>
 </html>

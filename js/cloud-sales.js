@@ -116,6 +116,7 @@ async function loadCloudSales() {
             total,
             cost,
             profit,
+            sale_date,
             created_at,
             sale_items (
                 id,
@@ -136,7 +137,7 @@ async function loadCloudSales() {
 
     return (data || []).map(sale => ({
         id: sale.id,
-        date: sale.created_at,
+        date: sale.sale_date || sale.created_at,
 
         cashierId: sale.cashier_id || "",
         cashierName: sale.cashier_name || "Admin",

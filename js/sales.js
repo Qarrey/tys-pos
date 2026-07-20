@@ -1362,6 +1362,37 @@ function printReceipt() {
 // SALES HISTORY
 //======================================================
 
+function formatSaleItemNames(sale) {
+    const items = Array.isArray(sale?.items)
+        ? sale.items
+        : [];
+
+    if (!items.length) {
+        return `<span class="small">No item details</span>`;
+    }
+
+    return items
+        .map(item => {
+            const name = String(
+                item.name ||
+                item.product_name ||
+                "Unknown Product"
+            );
+
+            const quantity = Number(
+                item.quantity || 0
+            );
+
+            return `
+                <div class="small">
+                    <strong>${name}</strong> × ${quantity}
+                </div>
+            `;
+        })
+        .join("");
+}
+
+
 function renderSales() {
     const salesHistory =
         document.getElementById(
@@ -1386,52 +1417,26 @@ function renderSales() {
                     .slice(0, 10)
                     .map(sale => `
                         <div class="sales-row">
-
                             <div>
-
                                 <strong>
-                                    ${
-                                        new Date(
-                                            sale.date
-                                        ).toLocaleString()
-                                    }
+                                    ${new Date(sale.date).toLocaleString()}
                                 </strong>
 
                                 <div class="small">
-
-                                    ${
-                                        (
-                                            sale.items ||
-                                            []
-                                        ).length
-                                    } item(s)
-
-                                    • Cashier:
-                                    ${
-                                        sale.cashierName ||
-                                        "Admin"
-                                    }
-
-                                    • Payment:
-                                    ${
-                                        sale.paymentMethod ||
-                                        "Cash"
-                                    }
-
+                                    Cashier: ${sale.cashierName || "Admin"}
+                                    • Payment: ${sale.paymentMethod || "Cash"}
                                 </div>
 
+                                <div style="margin-top:6px;">
+                                    ${formatSaleItemNames(sale)}
+                                </div>
                             </div>
 
                             <div>
                                 <strong>
-                                    ${
-                                        formatCurrency(
-                                            sale.total
-                                        )
-                                    }
+                                    ${formatCurrency(sale.total)}
                                 </strong>
                             </div>
-
                         </div>
                     `)
                     .join("");
@@ -1455,52 +1460,25 @@ function renderSales() {
                     .slice(0, 10)
                     .map(sale => `
                         <tr>
-
                             <td>
-                                ${
-                                    formatDateTime(
-                                        sale.date
-                                    )
-                                }
+                                ${formatDateTime(sale.date)}
                             </td>
 
                             <td>
-                                ${
-                                    (
-                                        sale.items ||
-                                        []
-                                    ).length
-                                }
+                                ${formatSaleItemNames(sale)}
                             </td>
 
                             <td>
-                                ${
-                                    formatCurrency(
-                                        sale.subtotal ||
-                                        sale.total ||
-                                        0
-                                    )
-                                }
+                                ${formatCurrency(sale.subtotal || sale.total || 0)}
                             </td>
 
                             <td>
-                                ${
-                                    formatCurrency(
-                                        sale.discount ||
-                                        0
-                                    )
-                                }
+                                ${formatCurrency(sale.discount || 0)}
                             </td>
 
                             <td>
-                                ${
-                                    formatCurrency(
-                                        sale.total ||
-                                        0
-                                    )
-                                }
+                                ${formatCurrency(sale.total || 0)}
                             </td>
-
                         </tr>
                     `)
                     .join("");

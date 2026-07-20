@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title>Low Stock Alerts | TYS POS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+
+<body data-admin-page>
+
+<div class="app-shell">
+
+<header class="topbar">
+    <div>
+        <p class="eyebrow">Alerts</p>
+        <h1>Low Stock Alerts</h1>
+    </div>
+
+    <div class="status-card">
+        <strong>TYS General Store</strong>
+
+        <nav class="top-nav">
+            <a href="index.html" class="nav-link">POS</a>
+            <a href="inventory.html" class="nav-link">Inventory</a>
+            <a href="purchases.html" class="nav-link">Purchases</a>
+            <a href="suppliers.html" class="nav-link">Suppliers</a>
+            <a href="customers.html" class="nav-link">Customers</a>
+            <a href="profit.html" class="nav-link">Profit</a>
+            <a href="expenses.html" class="nav-link">Expenses</a>
+            <a href="reports.html" class="nav-link">Reports</a>
+            <a href="stock.html" class="nav-link">Stock</a>
+            <a href="settings.html" class="nav-link">Settings</a>
+            <a href="backup.html" class="nav-link">Backup</a>
+        </nav>
+    </div>
+</header>
+
+<main class="panel">
+
+    <div class="section-heading">
+        <h2>Stock Alerts</h2>
+        <p>Products that need restocking.</p>
+    </div>
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+            <span>Low Stock</span>
+            <strong id="alert-low-count">0</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Out of Stock</span>
+            <strong id="alert-out-count">0</strong>
+        </div>
+
+        <div class="stat-card">
+            <span>Total Products</span>
+            <strong id="alert-total-products">0</strong>
+        </div>
+
+    </div>
+
+    <div class="inventory-card">
+        <h3>Low Stock Products</h3>
+
+        <table class="inventory-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>SKU</th>
+                    <th>Category</th>
+                    <th>Current Stock</th>
+                    <th>Reorder Level</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody id="low-stock-list">
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">No low stock products.</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+</main>
+
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/alerts.js"></script>
+<script src="js/navigation.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script src="js/supabase-config.js"></script>
+<script src="js/disable-service-worker.js"></script>
+
+<script src="js/auth-guard.js"></script>
+
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+
+<script src="js/role-guard.js"></script>
+</body>
+</html>
