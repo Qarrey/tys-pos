@@ -412,13 +412,13 @@
 
             <h2>
 
-                Recent Sales
+                Daily Sales
 
             </h2>
 
             <p>
 
-                Your latest completed transactions.
+                Every transaction recorded for the selected day.
 
             </p>
 
@@ -426,7 +426,16 @@
 
 
         <div class="inventory-card">
-
+            <div class="toolbar daily-sales-toolbar">
+                <label for="pos-sales-date"><strong>Sales date</strong></label>
+                <input id="pos-sales-date" type="date">
+                <button id="pos-sales-today" type="button" class="secondary-btn">Today</button>
+            </div>
+            <div class="stats-grid compact-stats">
+                <div class="stat-card"><span>Transactions</span><strong id="pos-day-transactions">0</strong></div>
+                <div class="stat-card"><span>Items Sold</span><strong id="pos-day-items">0</strong></div>
+                <div class="stat-card"><span>Day Total</span><strong id="pos-day-total">KSh 0.00</strong></div>
+            </div>
 
             <table class="inventory-table">
 
@@ -440,7 +449,7 @@
                         </th>
 
                         <th>
-                            Items Sold
+                            Items
                         </th>
 
                         <th>
@@ -547,6 +556,7 @@ POS MODULES
 <script src="js/purchases.js"></script>
 
 <script src="js/users.js"></script>
+<script src="js/product-variations.js"></script>
 <script src="js/cloud-sales.js"></script>
 
 <script src="js/sales.js"></script>

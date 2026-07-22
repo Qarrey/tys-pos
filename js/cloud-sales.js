@@ -82,7 +82,9 @@ async function saveSaleToSupabase(sale) {
                 product_id: productId,
                 product_name: item.name || product.name,
                 type: "Sale",
-                quantity: -Number(item.quantity || 0),
+                quantity:
+                    -Number(item.quantity || 0) *
+                    Number(item.stockDeduction || 1),
                 notes: `POS sale - ${sale.paymentMethod || "Cash"}`
             });
 
@@ -116,7 +118,6 @@ async function loadCloudSales() {
             total,
             cost,
             profit,
-            sale_date,
             created_at,
             sale_items (
                 id,
@@ -137,7 +138,7 @@ async function loadCloudSales() {
 
     return (data || []).map(sale => ({
         id: sale.id,
-        date: sale.sale_date || sale.created_at,
+        date: sale.created_at,
 
         cashierId: sale.cashier_id || "",
         cashierName: sale.cashier_name || "Admin",

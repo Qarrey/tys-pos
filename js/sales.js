@@ -66,7 +66,7 @@ function getFinalTotal() {
 // ADD TO CART
 //======================================================
 
-function addToCart(productId) {
+function addToCart(productId, variantId = "") {
     const product =
         getProductById(productId);
 
@@ -82,12 +82,16 @@ function addToCart(productId) {
         return;
     }
 
-    const existing =
-        getCartItem(product.id);
+    const variant = variantId && typeof getVariationById === "function"
+        ? getVariationById(variantId)
+        : null;
+    const deduction = variant ? Number(variant.stockDeduction || 1) : 1;
+    const cartId = variant ? `${product.id}::${variant.id}` : product.id;
+    const existing = getCartItem(cartId);
 
     if (existing) {
         if (
-            Number(existing.quantity) >=
+            Number(existing.quantity) * deduction >=
             Number(product.stock)
         ) {
             alert("Not enough stock.");
@@ -100,23 +104,24 @@ function addToCart(productId) {
     } else {
         cart.push({
             id:
-                product.id,
+                cartId,
 
             productId:
                 product.id,
 
             name:
-                product.name,
+                variant ? `${product.name} - ${variant.name}` : product.name,
+
+            variantId: variant ? variant.id : "",
+            stockDeduction: deduction,
 
             price:
-                Number(
-                    product.sellingPrice || 0
-                ),
+                Number(variant ? variant.sellingPrice : (product.sellingPrice || 0)),
 
+            // A quarter, half, cup, etc. uses the matching fraction of
+            // the base product cost so reports remain accurate.
             cost:
-                Number(
-                    product.cost || 0
-                ),
+                Number(product.cost || 0) * deduction,
 
             quantity:
                 1
@@ -255,14 +260,26 @@ function renderProducts(search = "") {
                     Stock: ${product.stock || 0}
                 </div>
 
-                <button
-                    class="primary-btn add-cart-btn"
-                    data-id="${product.id}"
-                    type="button">
+                ${(() => {
+                    const variants = typeof getProductVariations === "function"
+                        ? getProductVariations(product.id, true)
+                        : [];
 
-                    Add to Cart
+                    if (!variants.length) {
+                        return `<button class="primary-btn add-cart-btn" data-id="${product.id}" type="button">Add to Cart</button>`;
+                    }
 
-                </button>
+                    return `<div class="variant-buttons">${variants.map(variation => `
+                        <button
+                            class="secondary-btn add-cart-btn"
+                            data-id="${product.id}"
+                            data-variant-id="${variation.id}"
+                            type="button"
+                        >
+                            ${variation.name} · ${formatCurrency(variation.sellingPrice)}
+                        </button>
+                    `).join("")}</div>`;
+                })()}
 
             </div>
         `).join("");
@@ -276,7 +293,8 @@ function renderProducts(search = "") {
                 "click",
                 () => {
                     addToCart(
-                        button.dataset.id
+                        button.dataset.id,
+                        button.dataset.variantId || ""
                     );
                 }
             );
@@ -414,7 +432,8 @@ function renderCart() {
                 "click",
                 () => {
                     removeCartItem(
-                        button.dataset.id
+                        button.dataset.id,
+                        button.dataset.variantId || ""
                     );
                 }
             );
@@ -968,7 +987,7 @@ async function checkout() {
 
         product.stock =
             Number(product.stock || 0) -
-            Number(item.quantity || 0);
+            Number(item.quantity || 0) * Number(item.stockDeduction || 1);
 
         if (
             typeof recordStockMovement ===
@@ -985,9 +1004,8 @@ async function checkout() {
                     "Sale",
 
                 quantity:
-                    -Number(
-                        item.quantity || 0
-                    ),
+                    -Number(item.quantity || 0) *
+                    Number(item.stockDeduction || 1),
 
                 notes:
                     `POS sale - ${paymentMethod}`
@@ -1362,130 +1380,62 @@ function printReceipt() {
 // SALES HISTORY
 //======================================================
 
-function formatSaleItemNames(sale) {
-    const items = Array.isArray(sale?.items)
-        ? sale.items
-        : [];
-
-    if (!items.length) {
-        return `<span class="small">No item details</span>`;
-    }
-
-    return items
-        .map(item => {
-            const name = String(
-                item.name ||
-                item.product_name ||
-                "Unknown Product"
-            );
-
-            const quantity = Number(
-                item.quantity || 0
-            );
-
-            return `
-                <div class="small">
-                    <strong>${name}</strong> × ${quantity}
-                </div>
-            `;
-        })
-        .join("");
+function getPOSSelectedSalesDate() {
+    const input = document.getElementById("pos-sales-date");
+    if (input && input.value) return input.value;
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
 }
 
+function localDateKey(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
 
 function renderSales() {
-    const salesHistory =
-        document.getElementById(
-            "sales-history"
-        );
+    const salesHistory = document.getElementById("sales-history");
+    const salesList = document.getElementById("sales-list");
+    const selectedDate = getPOSSelectedSalesDate();
+    const daySales = (Array.isArray(sales) ? sales : [])
+        .filter(sale => localDateKey(sale.date) === selectedDate)
+        .sort((a,b) => new Date(a.date) - new Date(b.date));
 
-    const salesList =
-        document.getElementById(
-            "sales-list"
-        );
+    const transactionEl = document.getElementById("pos-day-transactions");
+    const itemsEl = document.getElementById("pos-day-items");
+    const totalEl = document.getElementById("pos-day-total");
+    const itemQty = daySales.reduce((sum,sale) => sum + (sale.items || []).reduce((x,item)=>x+Number(item.quantity||0),0),0);
+    const dayTotal = daySales.reduce((sum,sale)=>sum+Number(sale.total||0),0);
+    if (transactionEl) transactionEl.textContent = daySales.length;
+    if (itemsEl) itemsEl.textContent = itemQty;
+    if (totalEl) totalEl.textContent = formatCurrency(dayTotal);
 
     if (salesHistory) {
-        if (!sales.length) {
-            salesHistory.innerHTML = `
-                <div class="empty-state">
-                    No sales recorded yet.
-                </div>
-            `;
-        } else {
-            salesHistory.innerHTML =
-                sales
-                    .slice(0, 10)
-                    .map(sale => `
-                        <div class="sales-row">
-                            <div>
-                                <strong>
-                                    ${new Date(sale.date).toLocaleString()}
-                                </strong>
-
-                                <div class="small">
-                                    Cashier: ${sale.cashierName || "Admin"}
-                                    • Payment: ${sale.paymentMethod || "Cash"}
-                                </div>
-
-                                <div style="margin-top:6px;">
-                                    ${formatSaleItemNames(sale)}
-                                </div>
-                            </div>
-
-                            <div>
-                                <strong>
-                                    ${formatCurrency(sale.total)}
-                                </strong>
-                            </div>
-                        </div>
-                    `)
-                    .join("");
-        }
+        salesHistory.innerHTML = daySales.length ? daySales.map(sale => `
+            <div class="sales-row"><div><strong>${new Date(sale.date).toLocaleString()}</strong>
+            <div class="small">${(sale.items||[]).map(i=>`${i.name} × ${i.quantity}`).join(", ") || "No item details"} • Cashier: ${sale.cashierName||"Admin"} • ${sale.paymentMethod||"Cash"}</div></div>
+            <strong>${formatCurrency(sale.total||0)}</strong></div>`).join("") : '<div class="empty-state">No sales recorded for this day.</div>';
     }
 
     if (salesList) {
-        if (!sales.length) {
-            salesList.innerHTML = `
-                <tr>
-                    <td colspan="5">
-                        <div class="empty-state">
-                            No sales recorded.
-                        </div>
-                    </td>
-                </tr>
-            `;
-        } else {
-            salesList.innerHTML =
-                sales
-                    .slice(0, 10)
-                    .map(sale => `
-                        <tr>
-                            <td>
-                                ${formatDateTime(sale.date)}
-                            </td>
-
-                            <td>
-                                ${formatSaleItemNames(sale)}
-                            </td>
-
-                            <td>
-                                ${formatCurrency(sale.subtotal || sale.total || 0)}
-                            </td>
-
-                            <td>
-                                ${formatCurrency(sale.discount || 0)}
-                            </td>
-
-                            <td>
-                                ${formatCurrency(sale.total || 0)}
-                            </td>
-                        </tr>
-                    `)
-                    .join("");
-        }
+        salesList.innerHTML = daySales.length ? daySales.map(sale => `
+            <tr><td>${formatDateTime(sale.date)}</td>
+            <td>${(sale.items||[]).map(i=>`${i.name} × ${i.quantity}`).join("<br>") || "-"}</td>
+            <td>${formatCurrency(sale.subtotal||sale.total||0)}</td>
+            <td>${formatCurrency(sale.discount||0)}</td>
+            <td>${formatCurrency(sale.total||0)}</td></tr>`).join("") : '<tr><td colspan="5"><div class="empty-state">No sales recorded for this day.</div></td></tr>';
     }
 }
 
+function initializePOSSalesDateFilter() {
+    const input=document.getElementById("pos-sales-date");
+    if (!input) return;
+    if (!input.value) input.value=getPOSSelectedSalesDate();
+    input.addEventListener("change", renderSales);
+    document.getElementById("pos-sales-today")?.addEventListener("click",()=>{
+        const d=new Date(); input.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; renderSales();
+    });
+}
 
 //======================================================
 // BEST SELLERS
@@ -1712,3 +1662,5 @@ function refreshSales() {
         updateDashboardMetrics();
     }
 }
+
+document.addEventListener("DOMContentLoaded", initializePOSSalesDateFilter, { once: true });
