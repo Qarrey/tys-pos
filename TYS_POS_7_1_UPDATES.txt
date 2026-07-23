@@ -1,0 +1,11 @@
+TYS POS 7.1 updates
+
+1. Purchases: inventory dashboard cards removed.
+2. POS: daily sales date filter now shows every transaction for the selected day plus transaction count, items sold and total revenue. Profit is deliberately not shown on POS.
+3. Purchases: optional selling-price update with an explicit checkbox. Previous completed sales remain unchanged.
+4. Expenses: name search, category filter, from/to dates, clear and filtered CSV export.
+5. Owner dashboard: best/worst sellers, restock priorities, best days/times/month and inventory health.
+6. Product varieties: custom name, selling price and stock deduction.
+7. Corrections & Adjustments: stock and cost corrections with reasons and history.
+
+New pages: dashboard.html, variations.html, adjustments.html

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Business Intelligence | TYS POS</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-admin-page>
+<div class="app-shell">
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Business Intelligence</p>
+      <h1>Smart Dashboard</h1>
+    </div>
+    <div class="status-card">
+      <strong>TYS General Store</strong>
+      <nav id="main-navigation" class="top-nav"></nav>
+    </div>
+  </header>
+
+  <main class="panel">
+    <section class="dashboard-section">
+      <div class="section-heading">
+        <div><p class="eyebrow">Inventory Intelligence</p><h2>Where your stock money is sitting</h2></div>
+      </div>
+      <div class="analytics-grid">
+        <article class="inventory-card dashboard-wide"><h3>Smart Restock Recommendations</h3><p class="dashboard-note">Ranked by estimated days before stock runs out.</p><div id="dash-restock"></div></article>
+        <article class="inventory-card"><h3>Most Money Tied Up</h3><div id="dash-high-value"></div></article>
+        <article class="inventory-card"><h3>Least Money Tied Up</h3><div id="dash-low-value"></div></article>
+        <article class="inventory-card"><h3>Inventory Value by Category</h3><div id="dash-categories"></div></article>
+        <article class="inventory-card"><h3>Slow-Moving Products</h3><div id="dash-slow"></div></article>
+        <article class="inventory-card"><h3>Dead Stock</h3><div id="dash-dead"></div></article>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <div class="section-heading"><div><p class="eyebrow">Sales Intelligence</p><h2>Products gaining or losing momentum</h2></div></div>
+      <div class="analytics-grid">
+        <article class="inventory-card"><h3>Best-Selling Products</h3><div id="dash-best"></div></article>
+        <article class="inventory-card"><h3>Worst-Selling Products</h3><div id="dash-worst"></div></article>
+        <article class="inventory-card"><h3>Top Revenue Products</h3><div id="dash-revenue-products"></div></article>
+        <article class="inventory-card"><h3>Top Profit Products</h3><div id="dash-profit-products"></div></article>
+        <article class="inventory-card"><h3>Fastest Growing</h3><div id="dash-growing"></div></article>
+        <article class="inventory-card"><h3>Declining Products</h3><div id="dash-declining"></div></article>
+      </div>
+    </section>
+
+    <section class="dashboard-section">
+      <div class="section-heading"><div><p class="eyebrow">Business Patterns</p><h2>Your strongest days, weeks, months and times</h2></div></div>
+      <div class="analytics-grid">
+        <article class="inventory-card"><h3>Best Days of the Week</h3><div id="dash-days"></div></article>
+        <article class="inventory-card"><h3>Best Weeks of the Month</h3><div id="dash-weeks"></div></article>
+        <article class="inventory-card"><h3>Best Months</h3><div id="dash-months"></div></article>
+        <article class="inventory-card"><h3>Best Selling Hours</h3><div id="dash-hours"></div></article>
+        <article class="inventory-card dashboard-wide"><h3>Sales Heat Map: Day × Hour</h3><div id="dash-heatmap" class="heatmap-wrap"></div></article>
+      </div>
+    </section>
+  </main>
+</div>
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/cloud-products.js"></script>
+<script src="js/cloud-sales.js"></script>
+<script src="js/business-dashboard.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+<script src="js/role-guard.js"></script>
+</body>
+</html>
