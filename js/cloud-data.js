@@ -1206,8 +1206,10 @@ async function openRegisterInSupabase(register) {
             error
         );
 
+       console.error(error);
+
         alert(
-            "Register was opened on this device but not online."
+            JSON.stringify(error, null, 2)
         );
 
         return null;
