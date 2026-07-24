@@ -1168,18 +1168,27 @@ async function syncCloudRegistersToPOS() {
 //------------------------------------------------------
 
 async function openRegisterInSupabase(register) {
-    if (!register) {
+    const {
+        data: { user },
+        error: userError
+    } = await supabaseClient.auth.getUser();
+
+    if (userError || !user) {
+        console.error("Could not get logged-in user:", userError);
+
+        alert("Your login session was not found. Please log in again.");
         return null;
     }
 
     const { data, error } = await supabaseClient
         .from("registers")
         .insert({
-            cashier_id:
-                register.cashierId || null,
+            cashier_id: user.id,
 
             cashier_name:
-                register.cashier || "Admin",
+                register.cashier ||
+                user.email ||
+                "Cashier",
 
             opening_cash:
                 Number(register.openingCash || 0),
@@ -1188,14 +1197,12 @@ async function openRegisterInSupabase(register) {
                 register.openedAt ||
                 new Date().toISOString(),
 
-            cash_sales:
-                0,
+            cash_sales: 0,
 
             expected_cash:
                 Number(register.openingCash || 0),
 
-            status:
-                "Open"
+            status: "Open"
         })
         .select()
         .single();
@@ -1206,10 +1213,9 @@ async function openRegisterInSupabase(register) {
             error
         );
 
-       console.error(error);
-
         alert(
-            JSON.stringify(error, null, 2)
+            "Could not open the register online:\n" +
+            (error.message || "Unknown error")
         );
 
         return null;
@@ -1217,8 +1223,6 @@ async function openRegisterInSupabase(register) {
 
     return mapCloudRegister(data);
 }
-
-
 //------------------------------------------------------
 // CLOSE REGISTER ONLINE
 //------------------------------------------------------
