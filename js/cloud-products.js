@@ -111,6 +111,70 @@ function subscribeToCloudProducts() {
             console.log("Products realtime:", status);
         });
 }
+//------------------------------------------------------
+// SAVE PRODUCT TO SUPABASE
+//------------------------------------------------------
+
+async function saveProductToCloud(product) {
+    try {
+        const cloudProduct = {
+            name: product.name,
+            sku: product.sku || null,
+            barcode: product.barcode || null,
+            category: product.category || null,
+            cost: Number(product.cost || 0),
+            selling_price: Number(product.sellingPrice || 0),
+            stock: Number(product.stock || 0),
+            low_stock: Number(product.lowStock || 5)
+        };
+
+        let query;
+
+        const isExistingCloudProduct =
+            product.id &&
+            !String(product.id).startsWith("P-");
+
+        if (isExistingCloudProduct) {
+            query = supabaseClient
+                .from("products")
+                .update(cloudProduct)
+                .eq("id", product.id)
+                .select()
+                .single();
+        } else {
+            query = supabaseClient
+                .from("products")
+                .insert(cloudProduct)
+                .select()
+                .single();
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            console.error("Cloud product save failed:", error);
+            alert(`Online save failed: ${error.message}`);
+            return null;
+        }
+
+        return {
+            id: data.id,
+            name: data.name || "",
+            sku: data.sku || "",
+            barcode: data.barcode || "",
+            category: data.category || "",
+            cost: Number(data.cost || 0),
+            sellingPrice: Number(data.selling_price || 0),
+            stock: Number(data.stock || 0),
+            lowStock: Number(data.low_stock || 5)
+        };
+
+    } catch (error) {
+        console.error("Cloud product save failed:", error);
+        alert(`Online save failed: ${error.message}`);
+        return null;
+    }
+}
 
 //------------------------------------------------------
 // INITIALIZE

@@ -88,7 +88,9 @@ function getProductById(id) {
 // SAVE PRODUCT
 //======================================================
 
-function saveProduct() {
+async function saveProduct() {
+    const originalEditingId = editingProductId;
+
     const product = {
         id:
             editingProductId ||
@@ -96,120 +98,104 @@ function saveProduct() {
 
         name:
             document
-                .getElementById(
-                    "product-name"
-                )
+                .getElementById("product-name")
                 .value
                 .trim(),
 
         sku:
             document
-                .getElementById(
-                    "product-sku"
-                )
+                .getElementById("product-sku")
                 .value
                 .trim(),
 
+        barcode:
+            document
+                .getElementById("product-barcode")
+                ?.value
+                .trim() || "",
+
         category:
             document
-                .getElementById(
-                    "product-category"
-                )
+                .getElementById("product-category")
                 .value
                 .trim(),
 
         supplierId:
             document
-                .getElementById(
-                    "product-supplier"
-                )
+                .getElementById("product-supplier")
                 ?.value || "",
 
         cost:
             toNumber(
                 document
-                    .getElementById(
-                        "product-cost"
-                    )
+                    .getElementById("product-cost")
                     .value
             ),
 
         sellingPrice:
             toNumber(
                 document
-                    .getElementById(
-                        "product-selling-price"
-                    )
+                    .getElementById("product-selling-price")
                     .value
             ),
 
         stock:
             toNumber(
                 document
-                    .getElementById(
-                        "product-stock"
-                    )
+                    .getElementById("product-stock")
                     .value
             ),
 
         lowStock:
             toNumber(
                 document
-                    .getElementById(
-                        "product-low-stock"
-                    )
+                    .getElementById("product-low-stock")
                     .value || 5
             )
     };
 
-
     if (!product.name) {
-        alert(
-            "Product name is required."
-        );
-
+        alert("Product name is required.");
         return;
     }
 
+    const cloudProduct =
+        await saveProductToCloud(product);
 
-    if (editingProductId) {
+    if (!cloudProduct) {
+        return;
+    }
+
+    const savedProduct = {
+        ...product,
+        ...cloudProduct,
+        supplierId: product.supplierId
+    };
+
+    if (originalEditingId) {
         const index =
             inventory.findIndex(
                 currentProduct =>
-                    String(
-                        currentProduct.id
-                    ) ===
-                    String(
-                        editingProductId
-                    )
+                    String(currentProduct.id) ===
+                    String(originalEditingId)
             );
 
         if (index !== -1) {
             inventory[index] =
-                product;
+                savedProduct;
         }
 
-        showFeedback(
-            "Product updated."
-        );
+        showFeedback("Product updated online.");
 
     } else {
-        inventory.unshift(
-            product
-        );
-
-        showFeedback(
-            "Product added."
-        );
+        inventory.unshift(savedProduct);
+        showFeedback("Product added online.");
     }
-
 
     editingProductId = null;
 
     persistInventory();
-
     renderInventory();
-
 
     if (
         typeof populateProductDropdown ===
@@ -218,14 +204,12 @@ function saveProduct() {
         populateProductDropdown();
     }
 
-
     if (
         typeof updateDashboardMetrics ===
         "function"
     ) {
         updateDashboardMetrics();
     }
-
 
     const form =
         document.getElementById(
@@ -235,7 +219,6 @@ function saveProduct() {
     if (form) {
         form.reset();
     }
-
 
     const saveButton =
         document.querySelector(
@@ -247,7 +230,6 @@ function saveProduct() {
             "Save Product";
     }
 }
-
 
 //======================================================
 // EDIT PRODUCT
