@@ -107,39 +107,59 @@ async function saveSaleToSupabase(sale) {
 //------------------------------------------------------
 
 async function loadCloudSales() {
-    const { data, error } = await supabaseClient
-        .from("sales")
-        .select(`
-            id,
-            cashier_id,
-            cashier_name,
-            payment_method,
-            subtotal,
-            discount,
-            total,
-            cost,
-            profit,
-            created_at,
-            sale_items (
-                id,
-                product_id,
-                product_name,
-                quantity,
-                price,
-                cost,
-                total
-            )
-        `)
-        .order("created_at", { ascending: false });
+    // Supabase commonly caps a single response at 1,000 rows. Fetch in
+    // smaller pages so reports and local storage receive the complete history.
+    const pageSize = 500;
+    let from = 0;
+    const rows = [];
 
-    if (error) {
-        console.error("Could not load cloud sales:", error);
-        return [];
+    while (true) {
+        const { data, error } = await supabaseClient
+            .from("sales")
+            .select(`
+                id,
+                cashier_id,
+                cashier_name,
+                payment_method,
+                subtotal,
+                discount,
+                total,
+                cost,
+                profit,
+                created_at,
+                sale_date,
+                sale_items (
+                    id,
+                    product_id,
+                    product_name,
+                    quantity,
+                    price,
+                    cost,
+                    total
+                )
+            `)
+            .order("created_at", { ascending: false })
+            .order("id", { ascending: true })
+            .range(from, from + pageSize - 1);
+
+        if (error) {
+            console.error(`Could not load cloud sales (rows ${from}-${from + pageSize - 1}):`, error);
+            // Return null, not [], so a temporary network/query error cannot
+            // replace a valid local sales history with an empty array.
+            return null;
+        }
+
+        const page = data || [];
+        rows.push(...page);
+
+        if (page.length < pageSize) break;
+        from += pageSize;
     }
 
-    return (data || []).map(sale => ({
+    return rows.map(sale => ({
         id: sale.id,
-        date: sale.created_at,
+        // Use the actual sale date entered in POS, not the Supabase insertion time.
+        date: sale.sale_date || sale.created_at,
 
         cashierId: sale.cashier_id || "",
         cashierName: sale.cashier_name || "Admin",
@@ -172,8 +192,14 @@ async function syncCloudSalesToPOS() {
     try {
         const cloudSales = await loadCloudSales();
 
+        // Do not overwrite local data if the cloud fetch failed.
+        if (!Array.isArray(cloudSales)) {
+            console.error("Sales sync skipped; keeping the existing local sales data.");
+            return null;
+        }
+
         console.log(
-            `Loaded ${cloudSales.length} sales from Supabase.`
+            `Loaded ${cloudSales.length} sales from Supabase across all pages.`
         );
 
         sales = cloudSales;

@@ -45,6 +45,7 @@ async function loadNavigation() {
             <a href="expenses.html" class="nav-link">Expenses</a>
             <a href="profit.html" class="nav-link">Profit</a>
             <a href="register.html" class="nav-link">Register</a>
+            <a href="accounting.html" class="nav-link">Accounting</a>
             <a href="payment-report.html" class="nav-link">Payments</a>
         </div>
         <div class="nav-group"><span class="nav-group-title">Reports</span>

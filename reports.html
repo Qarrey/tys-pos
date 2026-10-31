@@ -33,6 +33,46 @@
         <p>Review sales, stock and profit summaries.</p>
     </div>
 
+    <div class="inventory-card" style="margin-bottom: 20px;">
+        <h3>Filter Reports by Date</h3>
+        <div class="form-grid">
+            <div class="field">
+                <label for="report-date-from">From</label>
+                <input id="report-date-from" type="date">
+            </div>
+            <div class="field">
+                <label for="report-date-to">To</label>
+                <input id="report-date-to" type="date">
+            </div>
+            <div class="field" style="display:flex;align-items:end;">
+                <button id="report-date-clear" type="button" class="secondary-btn">Today</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <span>Filtered Revenue</span>
+            <strong id="report-filtered-revenue">KSh 0.00</strong>
+        </div>
+        <div class="stat-card">
+            <span>Filtered Profit</span>
+            <strong id="report-filtered-profit">KSh 0.00</strong>
+        </div>
+        <div class="stat-card">
+            <span>Filtered Expenses</span>
+            <strong id="report-filtered-expenses">KSh 0.00</strong>
+        </div>
+        <div class="stat-card">
+            <span>Filtered Net Profit</span>
+            <strong id="report-filtered-net-profit">KSh 0.00</strong>
+        </div>
+        <div class="stat-card">
+            <span>Transactions</span>
+            <strong id="report-filtered-transactions">0</strong>
+        </div>
+    </div>
+
     <div class="stats-grid">
         <div class="stat-card">
             <span>Today Revenue</span>

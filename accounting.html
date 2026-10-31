@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accounting | TYS POS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body data-admin-page>
+<div class="app-shell">
+<header class="topbar">
+    <div>
+        <p class="eyebrow">Finance</p>
+        <h1>Business Accounting</h1>
+    </div>
+    <div class="status-card">
+        <strong>TYS General Store</strong>
+        <nav class="top-nav">
+            <a href="index.html" class="nav-link">POS</a>
+            <a href="dashboard.html" class="nav-link">Dashboard</a>
+            <a href="reports.html" class="nav-link">Reports</a>
+            <a href="expenses.html" class="nav-link">Expenses</a>
+            <a href="purchases.html" class="nav-link">Purchases</a>
+            <a href="register.html" class="nav-link">Register</a>
+        </nav>
+    </div>
+</header>
+
+<main class="panel">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">Management accounts</p>
+            <h2>Know if the business is making money</h2>
+            <p>Profit is calculated separately from cash flow so inventory purchases are not incorrectly treated as an immediate expense.</p>
+        </div>
+    </div>
+
+    <div class="inventory-card" style="margin-bottom:20px;">
+        <h3>Accounting Period</h3>
+        <div class="form-grid">
+            <div class="field">
+                <label for="accounting-from">From</label>
+                <input id="accounting-from" type="date">
+            </div>
+            <div class="field">
+                <label for="accounting-to">To</label>
+                <input id="accounting-to" type="date">
+            </div>
+            <div class="field" style="display:flex;align-items:end;gap:8px;">
+                <button id="accounting-today" type="button" class="secondary-btn">Today</button>
+                <button id="accounting-month" type="button" class="secondary-btn">This Month</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card"><span>Revenue</span><strong id="accounting-revenue">KSh 0.00</strong></div>
+        <div class="stat-card"><span>Cost of Goods Sold</span><strong id="accounting-cogs">KSh 0.00</strong></div>
+        <div class="stat-card"><span>Gross Profit</span><strong id="accounting-gross-profit">KSh 0.00</strong></div>
+        <div class="stat-card"><span>Operating Expenses</span><strong id="accounting-expenses">KSh 0.00</strong></div>
+        <div class="stat-card"><span>Net Profit / Loss</span><strong id="accounting-net-profit">KSh 0.00</strong></div>
+        <div class="stat-card"><span>Profit Margin</span><strong id="accounting-margin">0.00%</strong></div>
+    </div>
+
+    <div class="inventory-card">
+        <div class="section-heading">
+            <div>
+                <h3>Profit &amp; Loss Statement</h3>
+                <p>Sales minus the cost of the stock actually sold, minus operating expenses.</p>
+            </div>
+        </div>
+        <div class="accounting-lines">
+            <div class="dashboard-row"><span>Sales / Revenue</span><strong id="pnl-revenue">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span>Cost of Goods Sold</span><strong id="pnl-cogs">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span>Gross Profit</span><strong id="pnl-gross">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span>Operating Expenses</span><strong id="pnl-expenses">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span><strong>Net Profit / Loss</strong></span><strong id="pnl-net">KSh 0.00</strong></div>
+        </div>
+    </div>
+
+    <div class="inventory-card">
+        <div class="section-heading">
+            <div>
+                <h3>Cash Flow</h3>
+                <p>Recorded cash movement for the selected period.</p>
+            </div>
+        </div>
+        <div class="form-grid">
+            <div class="field">
+                <label for="accounting-opening-cash">Opening Cash</label>
+                <input id="accounting-opening-cash" type="number" min="0" step="0.01" placeholder="0.00">
+                <small>Used only for the cash-position calculation on this device.</small>
+            </div>
+        </div>
+        <div class="accounting-lines">
+            <div class="dashboard-row"><span>Cash Sales</span><strong id="cash-sales">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span>Purchases Recorded</span><strong id="cash-purchases">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span>Expenses</span><strong id="cash-expenses">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span><strong>Net Cash Movement</strong></span><strong id="cash-net">KSh 0.00</strong></div>
+            <div class="dashboard-row"><span><strong>Estimated Closing Cash</strong></span><strong id="cash-closing">KSh 0.00</strong></div>
+        </div>
+        <p class="dashboard-note">Purchases are treated as cash outflows here because the current purchase records do not yet store a payment method. We can add Cash / M-Pesa / Bank / Credit later.</p>
+    </div>
+
+    <div class="inventory-card">
+        <div class="section-heading">
+            <div>
+                <h3>Financial Position</h3>
+                <p>What the business currently has tied up in assets.</p>
+            </div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card"><span>Inventory at Cost</span><strong id="position-inventory">KSh 0.00</strong></div>
+            <div class="stat-card"><span>Estimated Cash</span><strong id="position-cash">KSh 0.00</strong></div>
+            <div class="stat-card"><span>Known Assets</span><strong id="position-assets">KSh 0.00</strong></div>
+        </div>
+    </div>
+
+    <div class="inventory-card">
+        <h3>By Expense Category</h3>
+        <div id="accounting-expense-breakdown" class="accounting-lines"></div>
+    </div>
+
+    <div class="inventory-card">
+        <h3>Accounting Notes</h3>
+        <ul>
+            <li>Inventory purchases are <strong>not</strong> counted as an expense in the Profit &amp; Loss statement.</li>
+            <li>The cost of stock sold is counted as Cost of Goods Sold.</li>
+            <li>Expenses reduce net profit.</li>
+            <li>Cash flow shows money moving in and out; profit and cash are not the same thing.</li>
+        </ul>
+    </div>
+</main>
+</div>
+
+<script src="inventory-seed.js"></script>
+<script src="js/database.js"></script>
+<script src="js/utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase-config.js"></script>
+<script src="js/cloud-data.js"></script>
+<script src="js/cloud-sales.js"></script>
+<script src="js/cloud-purchases.js"></script>
+<script src="js/accounting.js"></script>
+<script src="app.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/disable-service-worker.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/user-session.js"></script>
+<script src="js/admin-ui-guard.js"></script>
+<script src="js/role-guard.js"></script>
+</body>
+</html>

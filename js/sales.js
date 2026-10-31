@@ -1114,11 +1114,9 @@ async function checkout() {
     }
 
     if (
-        getCurrentPOSRole() ===
+        getCurrentPOSRole() !==
         "admin"
     ) {
-        setSaleDateToNow();
-    } else {
         const input =
             document.getElementById(
                 "sale-date"
